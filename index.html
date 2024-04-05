@@ -6,13 +6,10 @@
     <body>
         <div>
             <div id="external" ondrop="drop_handler(event)" ondragover="dragover_handler(event)">
-                <div id="dummyContainer">
+                <div id="dummyContainer" draggable="false">
                     <div id="axis-Y"></div>
                     <div id="axis-X"></div>
-                    <img id="dummyImg" src="full.png"/>
-                </div>
-                <div draggable="true" onmousemove ="updateCardinalText(event)" ondragstart="onDragStart(event)" id="spriteContainer">
-                    <img id="spriteImg"  alt="asdasda" src="head.png"/>
+                    <img id="dummyImg" draggable="false" src="full.png"/>
                 </div>
             </div>
         </div>

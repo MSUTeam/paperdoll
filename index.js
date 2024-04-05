@@ -1,19 +1,15 @@
 let offsetX;
 let offsetY;
 let showGrid = true;
-let yAxis, xAxis, spriteContainer, externalContainer, dummyContainer, elementContainer, spriteImg;
-let elements = {};
-let activeElement;
+let activeElement, yAxis, xAxis, externalContainer, dummyContainer, elementContainer;
+let elements = [];
 document.addEventListener('DOMContentLoaded', function() {
     yAxis = document.getElementById("axis-Y");
     xAxis = document.getElementById("axis-X");
-    spriteContainer = document.getElementById("spriteContainer");
     externalContainer = document.getElementById("external");
     dummyContainer = document.getElementById("dummyContainer");
     elementContainer = document.getElementById("elementContainer");
-    spriteImg = document.getElementById("spriteImg");
 
-    updateCardinalText();
 }, false);
 
 function addElement(ev)
@@ -24,73 +20,84 @@ function addElement(ev)
     if (FileReader && files && files.length) {
         let fr = new FileReader();
         fr.onload = function () {
-            let name = files[0].name;
             var image = new Image();
-            let div = document.createElement("div");
-            div.classList.add("spriteDummy");
-            div.addEventListener("click", () => activateElement(name))
-            elementContainer.append(div);
-
-            elements[name] = {
-                "src" : fr.result,
-                "img" : image,
-                "left" : 0,
-                "top" : 0,
-                "width" : 0,
-                "height" : 0
-            };
-            activeElement = elements[name];
             image.src = fr.result;
 
+            let name = files[0].name;
+
+
+
+            let container = createNewImageContainer();
+            externalContainer.append(container);
+            elements.push(container);
+            let idx = elements.length - 1;
+            container.querySelector("img").src = fr.result;
+            activeElement = container;
+
+            let listDiv = document.createElement("div");
+            listDiv.classList.add("spriteDummy");
+            listDiv.addEventListener("click", () => toggleElement(container))
+            elementContainer.append(listDiv);
+            listDiv.setAttribute("data", `idx : ${elements.length - 1}`);
+            listDiv.innerHTML = files[0].name;
+           
+
             image.onload = function() {
-                // access image size here 
-                let og = document.getElementById("spriteImg");
-                og.src = fr.result;
-                elements[name].src = fr.result;
-                spriteContainer.style.width = image.width;
-                spriteContainer.style.height = image.height;
-                div.setAttribute("data", `src : ${files[0]}`);
-                div.innerHTML = files[0].name;
-                activeSrc = og.src;
-            };
+                container.querySelector("img").style.width = image.width;
+                container.querySelector("img").style.height = image.height;
+            };  
         }
         fr.readAsDataURL(files[0]);
     }
 }
 
-function updateElement()
+function setActiveElement(_elem)
 {
-    activeElement.left = spriteContainer.offsetLeft;
-    activeElement.top = spriteContainer.offsetTop;
-    activeElement.width = spriteImg.width;
-    activeElement.height = spriteImg.height;
-    activeElement.src = spriteImg.src;
+    if (activeElement)
+    {
+        activeElement.classList.remove("activeElement");
+    }
+        
+    activeElement = _elem;
+    activeElement.classList.add("activeElement");
+    updateCardinalText()
 }
 
-function activateElement(_src)
+function createNewImageContainer()
 {
-    if (activeElement )
-        updateElement()
-    let imgObj = elements[_src];
-    spriteImg.src = imgObj.img.src;
-    spriteContainer.style.width = imgObj.width;
-    spriteContainer.style.height = imgObj.height;
-    spriteContainer.style.left = `${imgObj.left}px`;
-    spriteContainer.style.top = `${imgObj.top}px`;
-    activeElement = imgObj;
-    updateCardinalText();
+    let div = document.createElement("div");
+    div.draggable = true;
+    div.classList.add("spriteContainer");
+    div.addEventListener("click", (event) => setActiveElement(div));
+    div.addEventListener("mousemove", (event) => updateCardinalText(event));
+    div.addEventListener("dragstart", (event) => onDragStart(event));
+    let img = document.createElement("img");
+    img.classList.add("spriteImg");
+    div.append(img);
+    return div;
 }
+
+function toggleElement(_obj)
+{
+    _obj.style.display = _obj.style.display == "none" ? "block" : "none";
+}
+
 function toggleGrid(event)
 {
     var checked = event.currentTarget.checked;
     yAxis.style.backgroundColor = checked ? "transparent" : "black";
     xAxis.style.backgroundColor = checked ? "transparent" : "black";
-    spriteContainer.style.outline = checked ? "none" : "1px solid green";
+    document.querySelectorAll(".spriteContainer").forEach(element => {
+        element.style.outline = checked ? "none" : "1px solid green";
+    });
+    
     dummyContainer.style.outline = checked ? "none" : "1px solid black";
 }
 
 function onDragStart(ev){
-    const rect = document.getElementById("spriteContainer").getBoundingClientRect();
+    console.log(ev.currentTarget)
+    setActiveElement(ev.currentTarget)
+    const rect = activeElement.getBoundingClientRect();
 
     offsetX = ev.clientX - rect.x;
     offsetY = ev.clientY - rect.y;
@@ -101,9 +108,9 @@ function drop_handler(ev) {
 
     const dropTop = externalContainer.getBoundingClientRect().top;
     const dropLeft = externalContainer.getBoundingClientRect().left;
-    spriteContainer.style.position = "absolute";
-    spriteContainer.style.left = ev.clientX - offsetX - dropTop + 'px';
-    spriteContainer.style.top = ev.clientY - offsetY - dropLeft + 'px';
+    activeElement.style.position = "absolute";
+    activeElement.style.left = ev.clientX - offsetX - dropTop + 'px';
+    activeElement.style.top = ev.clientY - offsetY - dropLeft + 'px';
 
     updateCardinalText();
 }
@@ -115,7 +122,7 @@ function dragover_handler(ev) {
 
 function updateCardinalText(ev)
 {
-    const spriteRect = spriteContainer.getBoundingClientRect();
+    const spriteRect = activeElement.getBoundingClientRect();
     const yRect = yAxis.getBoundingClientRect();
     const xRect = xAxis.getBoundingClientRect();
     const left =  spriteRect.left - yRect.left;
@@ -150,8 +157,6 @@ document.addEventListener( "keydown",
 );
 function moveImage(x=0, y=0)
 {
-    let container = document.getElementById("spriteContainer");
-    console.log(container.offsetLeft)
-    container.style.left = `${container.offsetLeft + x}px`;
-    container.style.top = `${container.offsetTop + y}px`;
+    activeElement.style.left = `${activeElement.offsetLeft + x}px`;
+    activeElement.style.top = `${activeElement.offsetTop + y}px`;
 }

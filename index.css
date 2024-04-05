@@ -39,7 +39,7 @@
     width: 100%;
     background-color: black;
 }
-#spriteContainer
+.spriteContainer
 {
     position:absolute;
     resize: both;
@@ -48,7 +48,7 @@
     height: 20%; */
     outline: 1px solid black;
 }
-#spriteImg
+.spriteImg
 {
     width: 100%;
     height: 100%;
@@ -65,4 +65,10 @@
 {
     margin: 2px;
     outline: 2px solid black;
+}
+
+.activeElement
+{
+    z-index: 1;
+    outline: 1px solid green;
 }
