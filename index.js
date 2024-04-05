@@ -16,7 +16,6 @@ function addElement(ev)
 {
     let tgt = ev.target,
     files = tgt.files;
-    // FileReader support
     if (FileReader && files && files.length) {
         let fr = new FileReader();
         fr.onload = function () {
@@ -95,7 +94,6 @@ function toggleGrid(event)
 }
 
 function onDragStart(ev){
-    console.log(ev.currentTarget)
     setActiveElement(ev.currentTarget)
     const rect = activeElement.getBoundingClientRect();
 
