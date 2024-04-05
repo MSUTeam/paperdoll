@@ -107,8 +107,8 @@ function drop_handler(ev) {
     const dropTop = externalContainer.getBoundingClientRect().top;
     const dropLeft = externalContainer.getBoundingClientRect().left;
     activeElement.style.position = "absolute";
-    activeElement.style.left = ev.clientX - offsetX - dropTop + 'px';
-    activeElement.style.top = ev.clientY - offsetY - dropLeft + 'px';
+    activeElement.style.left = ev.clientX - offsetX - dropLeft + 'px';
+    activeElement.style.top = ev.clientY - offsetY - dropTop + 'px';
 
     updateCardinalText();
 }
