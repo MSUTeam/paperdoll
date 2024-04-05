@@ -43,8 +43,8 @@ function addElement(ev)
            
 
             image.onload = function() {
-                container.querySelector("img").style.width = image.width;
-                container.querySelector("img").style.height = image.height;
+                container.style.width = image.width;
+                container.style.height = image.height;
             };  
         }
         fr.readAsDataURL(files[0]);
