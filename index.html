@@ -1,0 +1,30 @@
+<html>
+    <head>
+        <script type="text/javascript" src="index.js"></script>
+        <link  rel="stylesheet" href="index.css"></style>
+    </head>
+    <body>
+        <div>
+            <div id="external" ondrop="drop_handler(event)" ondragover="dragover_handler(event)">
+                <div id="dummyContainer">
+                    <div id="axis-Y"></div>
+                    <div id="axis-X"></div>
+                    <img id="dummyImg" src="full.png"/>
+                </div>
+                <div draggable="true" onmousemove ="updateCardinalText(event)" ondragstart="onDragStart(event)" id="spriteContainer">
+                    <img id="spriteImg"  alt="asdasda" src="head.png"/>
+                </div>
+            </div>
+        </div>
+        <input onchange="addElement(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
+        <div>
+            <div id ="textleft"></div>
+            <div id ="textright"></div>
+            <div id ="texttop"></div>
+            <div id ="textbottom"></div>
+            <input type="checkbox" onchange="toggleGrid(event)" id="showGridCheckbox">
+            <label for="showGridCheckbox" >Hide grid</label>
+        </div>
+        <div id="elementContainer"></div>
+    </body>
+</html>
