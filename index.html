@@ -4,24 +4,26 @@
         <link  rel="stylesheet" href="index.css"></style>
     </head>
     <body>
-        <div>
+        <div id = "contentcontainer">
             <div id="external" ondrop="drop_handler(event)" ondragover="dragover_handler(event)">
-                <div id="dummyContainer" draggable="false">
-                    <div id="axis-Y"></div>
-                    <div id="axis-X"></div>
+                <div id="dummyContainer" class="showgrid" draggable="false">
+                    <div id="axis-Y" class="showgrid"></div>
+                    <div id="axis-X" class="showgrid"></div>
                     <img id="dummyImg" draggable="false" src="full.png"/>
                 </div>
             </div>
+            <div id ="otherstuffcontainer">
+                <input onchange="addElement(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
+                <div>
+                    <div id ="textleft"></div>
+                    <div id ="textright"></div>
+                    <div id ="texttop"></div>
+                    <div id ="textbottom"></div>
+                    <input type="checkbox" onchange="toggleGrid(event)" id="showGridCheckbox">
+                    <label for="showGridCheckbox" >Hide grid</label>
+                </div>
+                <div id="elementContainer"></div>
+            </div>
         </div>
-        <input onchange="addElement(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
-        <div>
-            <div id ="textleft"></div>
-            <div id ="textright"></div>
-            <div id ="texttop"></div>
-            <div id ="textbottom"></div>
-            <input type="checkbox" onchange="toggleGrid(event)" id="showGridCheckbox">
-            <label for="showGridCheckbox" >Hide grid</label>
-        </div>
-        <div id="elementContainer"></div>
     </body>
 </html>

@@ -1,5 +1,3 @@
-let offsetX;
-let offsetY;
 let showGrid = true;
 let activeElement, yAxis, xAxis, externalContainer, dummyContainer, elementContainer;
 let elements = [];
@@ -58,7 +56,7 @@ function setActiveElement(_elem)
     }
         
     activeElement = _elem;
-    activeElement.classList.add("activeElement");
+    activeElement.classList.add("activeBorder");
     updateCardinalText()
 }
 
@@ -84,14 +82,28 @@ function toggleElement(_obj)
 function toggleGrid(event)
 {
     var checked = event.currentTarget.checked;
-    yAxis.style.backgroundColor = checked ? "transparent" : "black";
-    xAxis.style.backgroundColor = checked ? "transparent" : "black";
-    document.querySelectorAll(".spriteContainer").forEach(element => {
-        element.style.outline = checked ? "none" : "1px solid green";
-    });
-    
-    dummyContainer.style.outline = checked ? "none" : "1px solid black";
+    if (checked)
+    {
+        yAxis.classList.add("showgrid");
+        xAxis.classList.add("showgrid");
+        dummyContainer.classList.add("showgrid");
+        document.querySelectorAll(".spriteContainer").forEach(element => {
+            element.classList.add("showgrid");
+        });
+    }
+    else
+    {
+        yAxis.classList.remove("showgrid");
+        xAxis.classList.remove("showgrid");
+        dummyContainer.classList.remove("showgrid");
+        document.querySelectorAll(".spriteContainer").forEach(element => {
+            element.classList.remove("showgrid");
+        });
+    }
 }
+
+let offsetX;
+let offsetY;
 
 function onDragStart(ev){
     setActiveElement(ev.currentTarget)
