@@ -85,15 +85,22 @@ function addElement(ev)
 
             let settingsDiv = document.createElement("div");
             settingsDiv.classList.add("spriteDummy");
+            settingsDiv.addEventListener("click", (event) => {event.stopPropagation(); toggleElement(container, name)})
            
-            let name = document.createElement("div");
+            let nameLabel = document.createElement("div");
+            nameLabel.innerHTML = "Click box to hide element";
+            settingsDiv.append(nameLabel);
+            let name = document.createElement("span");
             name.classList.add("settingsNameContainer");
             name.innerHTML = files[0].name;
-            name.addEventListener("click", () => toggleElement(container, name))
+            
             settingsDiv.append(name);
+            let zIndexLabel = document.createElement("div");
+            zIndexLabel.innerHTML="Z-Index";
+            settingsDiv.append(zIndexLabel);
             let zIndex = document.createElement("input");
             zIndex.type = "number";
-            zIndex.onclick = () => container.style.zIndex = zIndex.value;
+            zIndex.onclick = (event) => {event.stopPropagation(); container.style.zIndex = zIndex.value};
             settingsDiv.append(zIndex);
             elementSettingsContainer.append(settingsDiv);
            
