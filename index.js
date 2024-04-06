@@ -201,10 +201,12 @@ function updateCardinalText(ev)
     const right =  spriteRect.right - yRect.right;
     const top = spriteRect.top - xRect.top;
     const bottom = spriteRect.bottom - xRect.bottom;
-    document.getElementById("textleft").innerHTML = "left: " + parseInt(left)
-    document.getElementById("textright").innerHTML = "right: " + parseInt(right) 
-    document.getElementById("texttop").innerHTML = "top: " + parseInt(top)
-    document.getElementById("textbottom").innerHTML = "bottom: " + parseInt(bottom)
+    document.getElementById("cardinals").innerHTML =     `left: "${parseInt(left)}" right: "${parseInt(right)}" top: "${parseInt(top)}" bottom: "${parseInt(bottom)}"`
+}
+
+function copyCardinals()
+{
+    navigator.clipboard.writeText(document.getElementById("cardinals").innerHTML)
 }
 
 document.addEventListener( "keydown",

@@ -15,16 +15,13 @@
             </div>
             <div id ="otherstuffcontainer">
                 <div>
-                    <div id ="textleft">-1</div>
-                    <div id ="textright">-1</div>
-                    <div id ="texttop">-1</div>
-                    <div id ="textbottom">-1</div>
+                    <div id ="cardinals" onclick="copyCardinals()">-1</div>
                     <input type="checkbox" onchange="toggleGrid(event)" id="hideGridCheckbox">
                     <label for="hideGridCheckbox" >Hide grid</label>
                 </div>
-                <div>Paperdoll settings</div>
+                <div><b>Paperdoll settings</b></div>
                 <div id="paperdollSettingsContainer"></div>
-                <div>Sprite settings</div>
+                <div><b>Sprite settings</b></div>
                 <input onchange="addElement(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
                 <div id="elementSettingsContainer"></div>
             </div>
