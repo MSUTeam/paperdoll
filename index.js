@@ -1,15 +1,71 @@
 let showGrid = true;
-let activeElement, yAxis, xAxis, externalContainer, dummyContainer, elementContainer;
+let activeElement, yAxis, xAxis, externalContainer, dummyContainer, elementSettingsContainer, hideGridCheckbox, paperdollSettingsContainer;
 let elements = [];
+let presets = {
+    "Full Body" : {
+        Container : {
+            width : 119,
+            height : 114,
+        },
+        Parts : [
+            {
+                "src" : "body.png",
+                "left" : 158,
+                "top" : 187,
+            },
+            {
+                "src" : "head.png",
+                "left" : 177,
+                "top" : 151,
+            },
+        ]
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     yAxis = document.getElementById("axis-Y");
     xAxis = document.getElementById("axis-X");
     externalContainer = document.getElementById("external");
     dummyContainer = document.getElementById("dummyContainer");
-    elementContainer = document.getElementById("elementContainer");
-
+    elementSettingsContainer = document.getElementById("elementSettingsContainer");
+    paperdollSettingsContainer = document.getElementById("paperdollSettingsContainer");
+    hideGridCheckbox = document.getElementById("hideGridCheckbox");
+    
+    loadPresetDummy("Full Body");
+    toggleGrid();
 }, false);
 
+function loadPresetDummy(_key)
+{
+    dummyContainer.querySelectorAll(".paperdollImg").forEach(element => {
+        element.remove();
+    });
+    let preset = presets[_key];
+    preset.Parts.forEach(element => {
+        dummyContainer.style.width = preset.Container.width + "px";
+        dummyContainer.style.height = preset.Container.height + "px";
+        let img = document.createElement("img");
+        img.classList.add("paperdollImg");
+        img.draggable = false;
+        img.src = element.src;
+        img.style.position = "absolute";
+        img.style.left = (element.left - dummyContainer.offsetLeft)  + "px";
+        img.style.top = (element.top - dummyContainer.offsetTop) + "px";
+        dummyContainer.append(img);
+
+        let settingsDiv = document.createElement("div");
+        let name = document.createElement("div");
+        name.classList.add("settingsNameContainer");
+        name.innerHTML = element.src;
+        settingsDiv.append(name);
+        let zIndex = document.createElement("input");
+        zIndex.type = "number";
+        zIndex.onclick = () => img.style.zIndex = zIndex.value;
+        settingsDiv.append(zIndex);
+
+        paperdollSettingsContainer.append(settingsDiv);
+    });
+}
 function addElement(ev)
 {
     let tgt = ev.target,
@@ -20,23 +76,26 @@ function addElement(ev)
             var image = new Image();
             image.src = fr.result;
 
-            let name = files[0].name;
-
-
 
             let container = createNewImageContainer();
             externalContainer.append(container);
             elements.push(container);
-            let idx = elements.length - 1;
             container.querySelector("img").src = fr.result;
-            activeElement = container;
+            setActiveElement(container)
 
-            let listDiv = document.createElement("div");
-            listDiv.classList.add("spriteDummy");
-            listDiv.addEventListener("click", () => toggleElement(container))
-            elementContainer.append(listDiv);
-            listDiv.setAttribute("data", `idx : ${elements.length - 1}`);
-            listDiv.innerHTML = files[0].name;
+            let settingsDiv = document.createElement("div");
+            settingsDiv.classList.add("spriteDummy");
+           
+            let name = document.createElement("div");
+            name.classList.add("settingsNameContainer");
+            name.innerHTML = files[0].name;
+            name.addEventListener("click", () => toggleElement(container, name))
+            settingsDiv.append(name);
+            let zIndex = document.createElement("input");
+            zIndex.type = "number";
+            zIndex.onclick = () => container.style.zIndex = zIndex.value;
+            settingsDiv.append(zIndex);
+            elementSettingsContainer.append(settingsDiv);
            
 
             image.onload = function() {
@@ -56,7 +115,7 @@ function setActiveElement(_elem)
     }
         
     activeElement = _elem;
-    activeElement.classList.add("activeBorder");
+    activeElement.classList.add("activeElement");
     updateCardinalText()
 }
 
@@ -65,6 +124,8 @@ function createNewImageContainer()
     let div = document.createElement("div");
     div.draggable = true;
     div.classList.add("spriteContainer");
+    if (!hideGridCheckbox.checked)
+     div.classList.add("showgrid");
     div.addEventListener("click", (event) => setActiveElement(div));
     div.addEventListener("mousemove", (event) => updateCardinalText(event));
     div.addEventListener("dragstart", (event) => onDragStart(event));
@@ -74,15 +135,16 @@ function createNewImageContainer()
     return div;
 }
 
-function toggleElement(_obj)
+function toggleElement(_obj, _name)
 {
     _obj.style.display = _obj.style.display == "none" ? "block" : "none";
+    _name.style.color = _name.style.color == "red" ? "black" : "red";
 }
 
 function toggleGrid(event)
 {
-    var checked = event.currentTarget.checked;
-    if (checked)
+    var checked = hideGridCheckbox.checked;
+    if (!checked)
     {
         yAxis.classList.add("showgrid");
         xAxis.classList.add("showgrid");

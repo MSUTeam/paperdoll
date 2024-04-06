@@ -27,7 +27,7 @@ body
     resize: both;
 }
 
-#dummyImg
+.paperdollImg
 {
     max-width: 100%;
     max-height: 100%;
@@ -81,9 +81,13 @@ body
     outline: 1px solid rgba(255, 235, 205, 0.521);
 }
 
-.spriteContainer .activeElement.activeBorder
+.spriteContainer.activeElement
 {
     z-index: 1;
+}
+
+.spriteContainer.activeElement.showgrid
+{
     outline: 1px solid green;
 }
 
@@ -95,4 +99,10 @@ body
 #otherstuffcontainer
 {
     width: 401px;
+    padding-left: 2rem;
+}
+
+.settingsNameContainer
+{
+    width: 15rem;
 }
