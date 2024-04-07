@@ -1,7 +1,31 @@
 let showGrid = true;
-let activeElement, yAxis, xAxis, externalContainer, dummyContainer, elementSettingsContainer, hideGridCheckbox, paperdollSettingsContainer;
+let activeElement, yAxis, xAxis, externalContainer, dummyContainer, elementSettingsContainer, hideGridCheckbox, paperdollSettingsContainer, spriteCardinals, paperdollCardinals;
+
 let elements = [];
 let presets = {
+    "Head" : {    
+        Parts : [
+            {
+                "src" : "head.png",
+                left : -21,
+                top: -20,
+                right : 29,
+                bottom : 48,
+                width : 104,
+                height : 142,
+                offsetY : -35,
+            },
+        ]
+    },
+    "Body" : {
+        Parts : [
+            {
+                "src" : "body.png",
+                top: -48,
+                bottom : 10,
+            },
+        ]
+    },
     "Full Body" : {
         Container : {
             width : 119,
@@ -15,6 +39,7 @@ let presets = {
             },
             {
                 "src" : "head.png",
+                offsetY : -30,
                 "left" : 177,
                 "top" : 151,
             },
@@ -25,13 +50,15 @@ let presets = {
 document.addEventListener('DOMContentLoaded', function() {
     yAxis = document.getElementById("axis-Y");
     xAxis = document.getElementById("axis-X");
-    externalContainer = document.getElementById("external");
+    externalContainer = document.getElementById("externalContainer");
     dummyContainer = document.getElementById("dummyContainer");
     elementSettingsContainer = document.getElementById("elementSettingsContainer");
     paperdollSettingsContainer = document.getElementById("paperdollSettingsContainer");
     hideGridCheckbox = document.getElementById("hideGridCheckbox");
+    spriteCardinals = document.getElementById("spriteCardinals");
+    paperdollCardinals = document.getElementById("paperdollCardinals");
     
-    loadPresetDummy("Full Body");
+    loadPresetDummy("Head");
     toggleGrid();
 }, false);
 
@@ -40,19 +67,14 @@ function loadPresetDummy(_key)
     dummyContainer.querySelectorAll(".paperdollImg").forEach(element => {
         element.remove();
     });
+    paperdollSettingsContainer.innerHTML = "";
     let preset = presets[_key];
     preset.Parts.forEach(element => {
-        dummyContainer.style.width = preset.Container.width + "px";
-        dummyContainer.style.height = preset.Container.height + "px";
         let img = document.createElement("img");
         img.classList.add("paperdollImg");
         img.draggable = false;
         img.src = element.src;
-        img.style.position = "absolute";
-        img.style.left = (element.left - dummyContainer.offsetLeft)  + "px";
-        img.style.top = (element.top - dummyContainer.offsetTop) + "px";
         dummyContainer.append(img);
-
         let settingsDiv = document.createElement("div");
         let name = document.createElement("div");
         name.classList.add("settingsNameContainer");
@@ -62,8 +84,24 @@ function loadPresetDummy(_key)
         zIndex.type = "number";
         zIndex.onclick = () => img.style.zIndex = zIndex.value;
         settingsDiv.append(zIndex);
-
         paperdollSettingsContainer.append(settingsDiv);
+        // resize the bounding box
+        img.onload = function() {
+            const yRect = yAxis.getBoundingClientRect();
+            const xRect = xAxis.getBoundingClientRect();
+            const containerRect = externalContainer.getBoundingClientRect();
+            // either get the cardinals from the preset, or use the img source natural values
+            const left =    Math.abs(yRect.left - containerRect.left)       + (element.left || -(img.naturalWidth/2));
+            const right =   Math.abs(yRect.right - containerRect.right)     - (element.right || (img.naturalWidth/2));
+            const top =     Math.abs(xRect.top - containerRect.top)         + (element.top || -(img.naturalHeight/2));
+            const bottom =  Math.abs(xRect.bottom - containerRect.bottom)   - (element.bottom || (img.naturalHeight/2));
+            dummyContainer.style.position = "absolute";
+            dummyContainer.style.left =     (left)  + "px";
+            dummyContainer.style.right =    (right)  + "px";
+            dummyContainer.style.top =      (top) + "px";
+            dummyContainer.style.bottom =   (bottom)  + "px";
+            updateCardinalText(dummyContainer, paperdollCardinals);
+        }; 
     });
 }
 function addElement(ev)
@@ -123,7 +161,7 @@ function setActiveElement(_elem)
         
     activeElement = _elem;
     activeElement.classList.add("activeElement");
-    updateCardinalText()
+    updateCardinalText(activeElement, spriteCardinals)
 }
 
 function createNewImageContainer()
@@ -134,7 +172,7 @@ function createNewImageContainer()
     if (!hideGridCheckbox.checked)
      div.classList.add("showgrid");
     div.addEventListener("click", (event) => setActiveElement(div));
-    div.addEventListener("mousemove", (event) => updateCardinalText(event));
+    div.addEventListener("mousemove", (event) => updateCardinalText(div, spriteCardinals));
     div.addEventListener("dragstart", (event) => onDragStart(event));
     let img = document.createElement("img");
     img.classList.add("spriteImg");
@@ -191,7 +229,7 @@ function drop_handler(ev) {
     activeElement.style.left = ev.clientX - offsetX - dropLeft + 'px';
     activeElement.style.top = ev.clientY - offsetY - dropTop + 'px';
 
-    updateCardinalText();
+    updateCardinalText(activeElement, spriteCardinals);
 }
 
 function dragover_handler(ev) {
@@ -199,21 +237,27 @@ function dragover_handler(ev) {
     ev.dataTransfer.dropEffect = "move";
 };
 
-function updateCardinalText(ev)
+function getCenterOffsets(_element)
 {
-    const spriteRect = activeElement.getBoundingClientRect();
     const yRect = yAxis.getBoundingClientRect();
     const xRect = xAxis.getBoundingClientRect();
-    const left =  spriteRect.left - yRect.left;
-    const right =  spriteRect.right - yRect.right;
-    const top = spriteRect.top - xRect.top;
-    const bottom = spriteRect.bottom - xRect.bottom;
-    document.getElementById("cardinals").innerHTML =     `left: "${parseInt(left)}" right: "${parseInt(right)}" top: "${parseInt(top)}" bottom: "${parseInt(bottom)}"`
+    const left =  _element.left -   yRect.left;
+    const right =  _element.right - yRect.left;
+    const top = _element.top -      xRect.top;
+    const bottom = _element.bottom -xRect.top;
+    return {left:left, right:right, top:top, bottom:bottom}
 }
 
-function copyCardinals()
+function updateCardinalText(el, target)
 {
-    navigator.clipboard.writeText(document.getElementById("cardinals").innerHTML)
+    const rect = getCenterOffsets(el.getBoundingClientRect());
+    const parse = (_el) => Math.round(parseFloat(_el));
+    target.innerHTML = `left: "${parse(rect.left)}" right: "${parse(rect.right)}" top: "${parse(rect.top)}" bottom: "${parse(rect.bottom)}"`;
+}
+
+function copyCardinals(_element)
+{
+    navigator.clipboard.writeText(_element.innerHTML)
 }
 
 document.addEventListener( "keydown",
@@ -240,4 +284,5 @@ function moveImage(x=0, y=0)
 {
     activeElement.style.left = `${activeElement.offsetLeft + x}px`;
     activeElement.style.top = `${activeElement.offsetTop + y}px`;
+    updateCardinalText(activeElement, spriteCardinals);
 }
