@@ -106,3 +106,8 @@ body
 {
     width: 15rem;
 }
+
+#spritePositioner
+{
+    width: 100%;
+}

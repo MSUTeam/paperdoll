@@ -12,20 +12,31 @@
                 </div>
             </div>
             <div id ="otherstuffcontainer">
+                <div><b>Info:</b><br>
+                    This tool is used to get BB cardinal (left, right, top, bottom) values in a more convenient way.<br>
+                    The grid lines are what the offsets are calculated off.<br>
+                    Upload a new sprite with the button below.<br>
+                    The currently "active" sprite has a green border. A sprite can be activated by clicking on it. Use arrow keys to position element, or drag and drop it.<br>
+                    
+                </div>
                 <div>
-                    <div id ="spriteCardinals" onclick="copyCardinals(this)">-1</div>
                     <input type="checkbox" onchange="toggleGrid(event)" id="hideGridCheckbox">
                     <label for="hideGridCheckbox" >Hide grid</label>
                 </div>
                 <div><b>Paperdoll settings</b></div>
-                <div id ="paperdollCardinals" onclick="copyCardinals(this)">-1</div>
+                <div id ="paperdollCardinals" onclick="navigator.clipboard.writeText(this.innerHTML)">-1</div>
                 <select name="paperdollPresets" id="paperdollPresets" onchange="loadPresetDummy(this.value)">
                     <option value="Head">Head</option>
                     <option value="Body">Body</option>
                   </select>
                 <div id="paperdollSettingsContainer"></div>
                 <div><b>Sprite settings</b></div>
-                <input onchange="addElement(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
+                <div>Active sprite offsets:</div>
+                <div id ="spriteCardinals" onclick="navigator.clipboard.writeText(this.innerHTML)">-1</div>
+                <div>Paste offsets and push enter to position active sprite.</div>
+                <input type="text" id ="spritePositioner"/>
+                <div>Upload new sprite</div>
+                <input onchange="addSprite(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
                 <div id="elementSettingsContainer"></div>
             </div>
         </div>

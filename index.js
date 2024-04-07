@@ -57,6 +57,12 @@ document.addEventListener('DOMContentLoaded', function() {
     hideGridCheckbox = document.getElementById("hideGridCheckbox");
     spriteCardinals = document.getElementById("spriteCardinals");
     paperdollCardinals = document.getElementById("paperdollCardinals");
+
+    document.getElementById("spritePositioner").addEventListener("keypress", function(event){
+        if (event.key !== 'Enter')
+            return;
+        handlePassedCardinals();
+    })
     
     loadPresetDummy("Head");
     toggleGrid();
@@ -86,25 +92,44 @@ function loadPresetDummy(_key)
         settingsDiv.append(zIndex);
         paperdollSettingsContainer.append(settingsDiv);
         // resize the bounding box
-        img.onload = function() {
-            const yRect = yAxis.getBoundingClientRect();
-            const xRect = xAxis.getBoundingClientRect();
-            const containerRect = externalContainer.getBoundingClientRect();
-            // either get the cardinals from the preset, or use the img source natural values
-            const left =    Math.abs(yRect.left - containerRect.left)       + (element.left || -(img.naturalWidth/2));
-            const right =   Math.abs(yRect.right - containerRect.right)     - (element.right || (img.naturalWidth/2));
-            const top =     Math.abs(xRect.top - containerRect.top)         + (element.top || -(img.naturalHeight/2));
-            const bottom =  Math.abs(xRect.bottom - containerRect.bottom)   - (element.bottom || (img.naturalHeight/2));
-            dummyContainer.style.position = "absolute";
-            dummyContainer.style.left =     (left)  + "px";
-            dummyContainer.style.right =    (right)  + "px";
-            dummyContainer.style.top =      (top) + "px";
-            dummyContainer.style.bottom =   (bottom)  + "px";
-            updateCardinalText(dummyContainer, paperdollCardinals);
-        }; 
+        img.onload = () => positionWithCardinals(dummyContainer, element)
     });
 }
-function addElement(ev)
+
+function handlePassedCardinals()
+{
+    const ret = {};
+    const text = document.getElementById("spritePositioner").value;
+    const cards = ["left", "right", "top", "bottom"];
+    cards.forEach(element => {
+        const rex = new RegExp(`"?${element}"? ?= ?"(-?\\d+)"`);
+        const result = text.match(rex);
+        if (result != null)
+            ret[element] = parseInt(result[1]);
+    });
+    positionWithCardinals(activeElement, ret);
+}
+
+function positionWithCardinals(_element, _cardinals)
+{
+    const yRect = yAxis.getBoundingClientRect();
+    const xRect = xAxis.getBoundingClientRect();
+    const img = _element.querySelector("img");
+    const containerRect = externalContainer.getBoundingClientRect();
+    // either get the cardinals from the preset, or use the img source natural values
+    const left =    Math.abs(yRect.left - containerRect.left)       + (_cardinals.left || -(img.naturalWidth/2));
+    const right =   Math.abs(yRect.right - containerRect.right)     - (_cardinals.right || (img.naturalWidth/2));
+    const top =     Math.abs(xRect.top - containerRect.top)         + (_cardinals.top || -(img.naturalHeight/2));
+    const bottom =  Math.abs(xRect.bottom - containerRect.bottom)   - (_cardinals.bottom || (img.naturalHeight/2));
+    _element.style.position = "absolute";
+    _element.style.left =     (left)  + "px";
+    _element.style.right =    (right)  + "px";
+    _element.style.top =      (top) + "px";
+    _element.style.bottom =   (bottom)  + "px";
+    updateCardinalText(dummyContainer, paperdollCardinals);
+}
+
+function addSprite(ev)
 {
     let tgt = ev.target,
     files = tgt.files;
@@ -253,11 +278,6 @@ function updateCardinalText(el, target)
     const rect = getCenterOffsets(el.getBoundingClientRect());
     const parse = (_el) => Math.round(parseFloat(_el));
     target.innerHTML = `left: "${parse(rect.left)}" right: "${parse(rect.right)}" top: "${parse(rect.top)}" bottom: "${parse(rect.bottom)}"`;
-}
-
-function copyCardinals(_element)
-{
-    navigator.clipboard.writeText(_element.innerHTML)
 }
 
 document.addEventListener( "keydown",
