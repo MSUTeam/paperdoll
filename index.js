@@ -119,8 +119,8 @@ function positionWithCardinals(_element, _cardinals)
     // either get the cardinals from the preset, or use the img source natural values
     const left =    Math.abs(yRect.left - containerRect.left)       + (_cardinals.left || -(img.naturalWidth/2));
     const right =   Math.abs(yRect.right - containerRect.right)     - (_cardinals.right || (img.naturalWidth/2));
-    const top =     Math.abs(xRect.top - containerRect.top)         + (_cardinals.top || -(img.naturalHeight/2));
-    const bottom =  Math.abs(xRect.bottom - containerRect.bottom)   - (_cardinals.bottom || (img.naturalHeight/2));
+    const top =     Math.abs(xRect.top - containerRect.top)         - (_cardinals.bottom || -(img.naturalHeight/2));
+    const bottom =  Math.abs(xRect.bottom - containerRect.bottom)   + (_cardinals.top || (img.naturalHeight/2));
     _element.style.position = "absolute";
     _element.style.left =     (left)  + "px";
     _element.style.right =    (right)  + "px";
@@ -266,11 +266,11 @@ function getCenterOffsets(_element)
 {
     const yRect = yAxis.getBoundingClientRect();
     const xRect = xAxis.getBoundingClientRect();
-    const left =  _element.left -   yRect.left;
-    const right =  _element.right - yRect.left;
-    const top = _element.top -      xRect.top;
-    const bottom = _element.bottom -xRect.top;
-    return {left:left, right:right, top:top, bottom:bottom}
+    const left =  _element.left     - yRect.left;
+    const right =  _element.right   - yRect.left;
+    const top = _element.top     - xRect.top;
+    const bottom = _element.bottom     - xRect.top;
+    return {left:left, right:right, top:-bottom, bottom:-top}
 }
 
 function updateCardinalText(el, target)
