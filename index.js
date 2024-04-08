@@ -26,27 +26,8 @@ let presets = {
             },
         ]
     },
-    "Full Body" : {
-        Container : {
-            width : 119,
-            height : 114,
-        },
-        Parts : [
-            {
-                "src" : "body.png",
-                "left" : 158,
-                "top" : 187,
-            },
-            {
-                "src" : "head.png",
-                offsetY : -30,
-                "left" : 177,
-                "top" : 151,
-            },
-        ]
-    }
 }
-
+const spriteToTextDivMap = {};
 document.addEventListener('DOMContentLoaded', function() {
     yAxis = document.getElementById("axis-Y");
     xAxis = document.getElementById("axis-X");
@@ -57,6 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
     hideGridCheckbox = document.getElementById("hideGridCheckbox");
     spriteCardinals = document.getElementById("spriteCardinals");
     paperdollCardinals = document.getElementById("paperdollCardinals");
+    spriteToTextDivMap[dummyContainer] = paperdollCardinals;
 
     document.getElementById("spritePositioner").addEventListener("keypress", function(event){
         if (event.key !== 'Enter')
@@ -126,7 +108,7 @@ function positionWithCardinals(_element, _cardinals)
     _element.style.right =    (right)  + "px";
     _element.style.top =      (top) + "px";
     _element.style.bottom =   (bottom)  + "px";
-    updateCardinalText(dummyContainer, paperdollCardinals);
+    updateCardinalText(_element);
 }
 
 function addSprite(ev)
@@ -144,11 +126,13 @@ function addSprite(ev)
             externalContainer.append(container);
             elements.push(container);
             container.querySelector("img").src = fr.result;
-            setActiveElement(container)
 
             let settingsDiv = document.createElement("div");
             settingsDiv.classList.add("spriteDummy");
             settingsDiv.addEventListener("click", (event) => {event.stopPropagation(); toggleElement(container, name)})
+            let offsetText = document.createElement("div");
+            spriteToTextDivMap[container] =  offsetText;
+            settingsDiv.append(offsetText);
            
             let nameLabel = document.createElement("div");
             nameLabel.innerHTML = "Click box to hide element";
@@ -172,6 +156,7 @@ function addSprite(ev)
                 container.style.width = image.width;
                 container.style.height = image.height;
             };  
+            setActiveElement(container)
         }
         fr.readAsDataURL(files[0]);
     }
@@ -186,7 +171,7 @@ function setActiveElement(_elem)
         
     activeElement = _elem;
     activeElement.classList.add("activeElement");
-    updateCardinalText(activeElement, spriteCardinals)
+    updateCardinalText(activeElement)
 }
 
 function createNewImageContainer()
@@ -195,9 +180,9 @@ function createNewImageContainer()
     div.draggable = true;
     div.classList.add("spriteContainer");
     if (!hideGridCheckbox.checked)
-     div.classList.add("showgrid");
+    div.classList.add("showgrid");
     div.addEventListener("click", (event) => setActiveElement(div));
-    div.addEventListener("mousemove", (event) => updateCardinalText(div, spriteCardinals));
+    div.addEventListener("mousemove", (event) => updateCardinalText(div));
     div.addEventListener("dragstart", (event) => onDragStart(event));
     let img = document.createElement("img");
     img.classList.add("spriteImg");
@@ -254,7 +239,7 @@ function drop_handler(ev) {
     activeElement.style.left = ev.clientX - offsetX - dropLeft + 'px';
     activeElement.style.top = ev.clientY - offsetY - dropTop + 'px';
 
-    updateCardinalText(activeElement, spriteCardinals);
+    updateCardinalText(activeElement);
 }
 
 function dragover_handler(ev) {
@@ -273,10 +258,12 @@ function getCenterOffsets(_element)
     return {left:left, right:right, top:-bottom, bottom:-top}
 }
 
-function updateCardinalText(el, target)
+function updateCardinalText(el, target = null)
 {
     const rect = getCenterOffsets(el.getBoundingClientRect());
     const parse = (_el) => Math.round(parseFloat(_el));
+    if (target == null)
+        target =  spriteToTextDivMap[el]
     target.innerHTML = `left: "${parse(rect.left)}" right: "${parse(rect.right)}" top: "${parse(rect.top)}" bottom: "${parse(rect.bottom)}"`;
 }
 
@@ -304,5 +291,5 @@ function moveImage(x=0, y=0)
 {
     activeElement.style.left = `${activeElement.offsetLeft + x}px`;
     activeElement.style.top = `${activeElement.offsetTop + y}px`;
-    updateCardinalText(activeElement, spriteCardinals);
+    updateCardinalText(activeElement);
 }
