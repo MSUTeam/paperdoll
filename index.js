@@ -1,7 +1,9 @@
 let showGrid = true;
 let activeElement, yAxis, xAxis, externalContainer, dummyContainer, elementSettingsContainer, hideGridCheckbox, paperdollSettingsContainer, spriteCardinals, paperdollCardinals;
 
+const spriteToTextDivMap = {};
 let elements = [];
+
 let presets = {
     "Head" : {    
         Parts : [
@@ -27,7 +29,6 @@ let presets = {
         ]
     },
 }
-const spriteToTextDivMap = {};
 document.addEventListener('DOMContentLoaded', function() {
     yAxis = document.getElementById("axis-Y");
     xAxis = document.getElementById("axis-X");
@@ -121,18 +122,17 @@ function addSprite(ev)
             var image = new Image();
             image.src = fr.result;
 
-
             let container = createNewImageContainer();
             externalContainer.append(container);
             elements.push(container);
             container.querySelector("img").src = fr.result;
-
             let settingsDiv = document.createElement("div");
             settingsDiv.classList.add("spriteDummy");
             settingsDiv.addEventListener("click", (event) => {event.stopPropagation(); toggleElement(container, name)})
             let offsetText = document.createElement("div");
-            spriteToTextDivMap[container] =  offsetText;
             settingsDiv.append(offsetText);
+            spriteToTextDivMap[container] =  offsetText;
+            offsetText.addEventListener("click", (event) => {event.stopPropagation();navigator.clipboard.writeText(offsetText.innerHTML)})
            
             let nameLabel = document.createElement("div");
             nameLabel.innerHTML = "Click box to hide element";
@@ -171,7 +171,6 @@ function setActiveElement(_elem)
         
     activeElement = _elem;
     activeElement.classList.add("activeElement");
-    updateCardinalText(activeElement)
 }
 
 function createNewImageContainer()
@@ -180,16 +179,29 @@ function createNewImageContainer()
     div.draggable = true;
     div.classList.add("spriteContainer");
     if (!hideGridCheckbox.checked)
-    div.classList.add("showgrid");
+        div.classList.add("showgrid");
     div.addEventListener("click", (event) => setActiveElement(div));
-    div.addEventListener("mousemove", (event) => updateCardinalText(div));
     div.addEventListener("dragstart", (event) => onDragStart(event));
     let img = document.createElement("img");
     img.classList.add("spriteImg");
     div.append(img);
+    addObserver(div);
     return div;
 }
-
+function addObserver(_div)
+{
+    const config = {attributes : true};
+    const callback = function(mutationList, observer){
+        updateCardinalText(_div);
+        observer.disconnect();
+        setTimeout(() => observer.observe(_div, config), 0.05)
+        return;
+    }
+    // add observer
+    const observer = new MutationObserver(callback);
+    observer.observe(_div, config);
+    return observer;
+}
 function toggleElement(_obj, _name)
 {
     _obj.style.display = _obj.style.display == "none" ? "block" : "none";
@@ -238,8 +250,6 @@ function drop_handler(ev) {
     activeElement.style.position = "absolute";
     activeElement.style.left = ev.clientX - offsetX - dropLeft + 'px';
     activeElement.style.top = ev.clientY - offsetY - dropTop + 'px';
-
-    updateCardinalText(activeElement);
 }
 
 function dragover_handler(ev) {
@@ -291,5 +301,4 @@ function moveImage(x=0, y=0)
 {
     activeElement.style.left = `${activeElement.offsetLeft + x}px`;
     activeElement.style.top = `${activeElement.offsetTop + y}px`;
-    updateCardinalText(activeElement);
 }
