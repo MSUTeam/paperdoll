@@ -308,6 +308,7 @@ document.addEventListener( "keydown",
             {
                 getCorrespondingObject(activeElement).remove();
                 activeElement.remove();
+                activeElement = null;
             }
             break;
      }
