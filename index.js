@@ -1,7 +1,11 @@
 let showGrid = true;
 let activeElement, yAxis, xAxis, externalContainer, elementSettingsContainer, hideGridCheckbox, spriteCardinals;
 
-const spriteToSettingsDivMap = {};
+function getCorrespondingObject(_container, _setting) {
+    if (_container)
+        return document.querySelector(`#spriteSetting_${_container.dataset.spriteID}`)
+    else return document.querySelector(`#spriteContainer_${_container.dataset.spriteID}`)
+}
 let elements = [];
 
 let presets = {
@@ -43,11 +47,95 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleGrid();
 }, false);
 
+function loadImage(_src)
+{
+    return new Promise(resolve => {
+        let img = document.createElement("img");
+        img.classList.add("spriteImg");
+        img.onload = () => resolve(img);
+        img.src = _src;
+    });
+}
+
+let spriteID = 0;
+function addSprite(_img, _name)
+{
+    const container = createNewImageContainer();
+    container.append(_img)
+    externalContainer.append(container);
+
+    let settingsDiv = document.createElement("div");
+    settingsDiv.classList.add("spriteSetting");
+    settingsDiv.addEventListener("click", (event) => {event.stopPropagation(); toggleElement(container, name)})
+    elementSettingsContainer.append(settingsDiv);
+
+    let offsetText = document.createElement("div");
+    offsetText.classList.add("spriteOffsetText");
+    settingsDiv.append(offsetText);
+    offsetText.addEventListener("click", (event) => {event.stopPropagation();navigator.clipboard.writeText(offsetText.innerHTML)})
+    
+    let nameLabel = document.createElement("div");
+    nameLabel.innerHTML = "Click box to hide element";
+    settingsDiv.append(nameLabel);
+    let name = document.createElement("span");
+    name.classList.add("settingsNameContainer");
+    name.innerHTML = _name;
+    settingsDiv.append(name);
+
+    let zIndexLabel = document.createElement("div");
+    zIndexLabel.innerHTML="Z-Index";
+    settingsDiv.append(zIndexLabel);
+    let zIndex = document.createElement("input");
+    zIndex.type = "number";
+    zIndex.onclick = (event) => {event.stopPropagation(); container.style.zIndex = zIndex.value};
+    settingsDiv.append(zIndex);
+
+    spriteID++;
+    container.dataset.spriteID = spriteID;
+    container.id = "spriteContainer_" + spriteID;
+    settingsDiv.dataset.spriteID = spriteID;
+    settingsDiv.id = "spriteSetting_" + spriteID;
+
+    setActiveElement(container);
+    positionWithCardinals(container, {});
+    return container;
+}
+
+function createNewImageContainer(_src)
+{
+    let div = document.createElement("div");
+    div.draggable = true;
+    div.classList.add("spriteContainer");
+    if (!hideGridCheckbox.checked)
+        div.classList.add("showgrid");
+    div.addEventListener("click", (event) => setActiveElement(div));
+    div.addEventListener("dragstart", (event) => onDragStart(event));
+    addObserver(div);
+    return div;
+}
+
+function addObserver(_div)
+{
+    const config = {attributes : true};
+    const callback = function(mutationList, observer){
+        updateCardinalText(_div);
+        observer.disconnect();
+        setTimeout(() => observer.observe(_div, config), 0.05)
+        return;
+    }
+    // add observer
+    const observer = new MutationObserver(callback);
+    observer.observe(_div, config);
+    return observer;
+}
+
 function loadPresetDummy(_key)
 {
     let preset = presets[_key];
     preset.Parts.forEach(element => {
-        positionWithCardinals(addSprite(element.src, element.src), element);
+        loadImage(element.src)
+        .then(img => addSprite(img, element.src))
+        .then(container => positionWithCardinals(container, element))
     });
 }
 
@@ -67,16 +155,13 @@ function handlePassedCardinals()
 
 function positionWithCardinals(_element, _cardinals)
 {
-    const yRect = yAxis.getBoundingClientRect();
-    const xRect = xAxis.getBoundingClientRect();
     const img = _element.querySelector("img");
     const containerRect = externalContainer.getBoundingClientRect();
     // either get the cardinals from the preset, or use the img source natural values
-    const left =    Math.abs(yRect.left - containerRect.left)       + (_cardinals.left || -(img.naturalWidth/2));
-    const right =   Math.abs(yRect.right - containerRect.right)     - (_cardinals.right || (img.naturalWidth/2));
-    const top =     Math.abs(xRect.top - containerRect.top)         - (_cardinals.bottom || -(img.naturalHeight/2));
-    const bottom =  Math.abs(xRect.bottom - containerRect.bottom)   + (_cardinals.top || (img.naturalHeight/2));
-    _element.style.position = "absolute";
+    const left =    (containerRect.width/2)       + (_cardinals.left    || -(img.naturalWidth/2));
+    const right =   (containerRect.width/2)       + (-_cardinals.right  || -(img.naturalWidth/2));
+    const top =     (containerRect.height/2)      + (-_cardinals.bottom || -(img.naturalHeight/2));
+    const bottom =  (containerRect.height/2)      + (_cardinals.top     || -(img.naturalHeight/2));
     _element.style.left =     (left)  + "px";
     _element.style.right =    (right)  + "px";
     _element.style.top =      (top) + "px";
@@ -90,116 +175,71 @@ function loadFile(ev)
     if (FileReader && files && files.length) {
         let fr = new FileReader();
         fr.onload = function () {
-            addSprite(fr.result, files[0].name)
+            loadImage(fr.result)
+            .then(img => addSprite(img, files[0].name))
         }
         fr.readAsDataURL(files[0]);
     }
 }
+let previousX;
+let previousY
+let offsetX;
+let offsetY;
+
+function onDragStart(ev){
+    setActiveElement(ev.currentTarget)
+    const rect = activeElement.getBoundingClientRect();
+    previousX = ev.clientX;
+    previousY = ev.clientY;
+    offsetX = ev.clientX - rect.x;
+    offsetY = ev.clientY - rect.y;
+}
+
+function dragover_handler(ev) {
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = "move";
+};
 
 function drop_handler(ev) {
     ev.preventDefault();
-    if (ev.dataTransfer.files.length > 0) {
+    if (ev.dataTransfer && ev.dataTransfer.files.length > 0) {
         [...ev.dataTransfer.files].forEach((file, i) => {
             let fr = new FileReader();
             fr.onload = function () {
-                addSprite(fr.result, file.name)
+                loadImage(fr.result)
+                .then(img => addSprite(img, file.name))
             }
             fr.readAsDataURL(file);
         });
         return;
     }
 
-    const dropTop = externalContainer.getBoundingClientRect().top;
-    const dropLeft = externalContainer.getBoundingClientRect().left;
-    activeElement.style.position = "absolute";
-    activeElement.style.left = ev.clientX - offsetX - dropLeft + 'px';
-    activeElement.style.top = ev.clientY - offsetY - dropTop + 'px';
+    const left = ev.clientX - previousX;
+    const top = ev.clientY - previousY;
+    moveImage(left, top)
 }
 
-function addSprite(_src, _name)
+function moveImage(x=0, y=0)
 {
-    var image = new Image();
-    image.src = _src;
-
-    let container = createNewImageContainer();
-    externalContainer.append(container);
-    elements.push(container);
-    container.querySelector("img").src = _src;
-    let settingsDiv = document.createElement("div");
-    settingsDiv.classList.add("spriteDummy");
-    settingsDiv.addEventListener("click", (event) => {event.stopPropagation(); toggleElement(container, name)})
-    spriteToSettingsDivMap[container] = settingsDiv;
-    let offsetText = document.createElement("div");
-    offsetText.classList.add("spriteOffsetText");
-    settingsDiv.append(offsetText);
-    offsetText.addEventListener("click", (event) => {event.stopPropagation();navigator.clipboard.writeText(offsetText.innerHTML)})
-    
-    let nameLabel = document.createElement("div");
-    nameLabel.innerHTML = "Click box to hide element";
-    settingsDiv.append(nameLabel);
-    let name = document.createElement("span");
-    name.classList.add("settingsNameContainer");
-    name.innerHTML = _name;
-    
-    settingsDiv.append(name);
-    let zIndexLabel = document.createElement("div");
-    zIndexLabel.innerHTML="Z-Index";
-    settingsDiv.append(zIndexLabel);
-    let zIndex = document.createElement("input");
-    zIndex.type = "number";
-    zIndex.onclick = (event) => {event.stopPropagation(); container.style.zIndex = zIndex.value};
-    settingsDiv.append(zIndex);
-    elementSettingsContainer.append(settingsDiv);
-    
-
-    image.onload = function() {
-        container.style.width = image.width;
-        container.style.height = image.height;
-    };  
-    setActiveElement(container)
-    return container;
+    const boundingRect = externalContainer.getBoundingClientRect();
+    activeElement.style.right = `${boundingRect.width - activeElement.offsetLeft - activeElement.offsetWidth - x}px`;
+    activeElement.style.bottom = `${boundingRect.height - activeElement.offsetTop - activeElement.offsetHeight - y}px`;
+    activeElement.style.left = `${activeElement.offsetLeft + x}px`;
+    activeElement.style.top = `${activeElement.offsetTop + y}px`;
 }
 
 function setActiveElement(_elem)
 {
     if (activeElement)
     {
+        getCorrespondingObject(activeElement).classList.remove("activeSetting");
         activeElement.classList.remove("activeElement");
     }
-        
     activeElement = _elem;
     activeElement.classList.add("activeElement");
+    getCorrespondingObject(activeElement).classList.add("activeSetting");
 }
 
-function createNewImageContainer()
-{
-    let div = document.createElement("div");
-    div.draggable = true;
-    div.classList.add("spriteContainer");
-    if (!hideGridCheckbox.checked)
-        div.classList.add("showgrid");
-    div.addEventListener("click", (event) => setActiveElement(div));
-    div.addEventListener("dragstart", (event) => onDragStart(event));
-    let img = document.createElement("img");
-    img.classList.add("spriteImg");
-    div.append(img);
-    addObserver(div);
-    return div;
-}
-function addObserver(_div)
-{
-    const config = {attributes : true};
-    const callback = function(mutationList, observer){
-        updateCardinalText(_div);
-        observer.disconnect();
-        setTimeout(() => observer.observe(_div, config), 0.05)
-        return;
-    }
-    // add observer
-    const observer = new MutationObserver(callback);
-    observer.observe(_div, config);
-    return observer;
-}
 function toggleElement(_obj, _name)
 {
     _obj.style.display = _obj.style.display == "none" ? "block" : "none";
@@ -227,22 +267,6 @@ function toggleGrid(event)
     }
 }
 
-let offsetX;
-let offsetY;
-
-function onDragStart(ev){
-    setActiveElement(ev.currentTarget)
-    const rect = activeElement.getBoundingClientRect();
-
-    offsetX = ev.clientX - rect.x;
-    offsetY = ev.clientY - rect.y;
-}
-
-function dragover_handler(ev) {
-    ev.preventDefault();
-    ev.dataTransfer.dropEffect = "move";
-};
-
 function getCenterOffsets(_element)
 {
     const yRect = yAxis.getBoundingClientRect();
@@ -259,7 +283,7 @@ function updateCardinalText(el, target = null)
     const rect = getCenterOffsets(el.getBoundingClientRect());
     const parse = (_el) => Math.round(parseFloat(_el));
     if (target == null)
-        target = spriteToSettingsDivMap[el].querySelector(".spriteOffsetText");
+        target = getCorrespondingObject(activeElement).querySelector(".spriteOffsetText");
     target.innerHTML = `left: "${parse(rect.left)}" right: "${parse(rect.right)}" top: "${parse(rect.top)}" bottom: "${parse(rect.bottom)}"`;
 }
 
@@ -282,7 +306,7 @@ document.addEventListener( "keydown",
         case "Delete":
             if (activeElement)
             {
-                spriteToSettingsDivMap[activeElement].remove();
+                getCorrespondingObject(activeElement).remove();
                 activeElement.remove();
             }
             break;
@@ -290,8 +314,3 @@ document.addEventListener( "keydown",
     },
     true,
 );
-function moveImage(x=0, y=0)
-{
-    activeElement.style.left = `${activeElement.offsetLeft + x}px`;
-    activeElement.style.top = `${activeElement.offsetTop + y}px`;
-}

@@ -2,13 +2,6 @@ body
 {
     background-color: rgb(170, 138, 89);
     display:flex;
-    justify-content: center;
-}
-
-#contentcontainer
-{
-    display: flex;
-    justify-content: center;
 }
 
 #externalContainer
@@ -61,7 +54,7 @@ body
     pointer-events: none;
 }
 
-.spriteDummy
+.spriteSetting
 {
     width: 30rem;
     margin: 2px;
@@ -69,10 +62,14 @@ body
     margin-bottom: 3px;
 }
 
-.spriteDummy:hover
+.spriteSetting:hover
 {
     margin: 2px;
     outline: 2px solid black;
+}
+.spriteSetting.activeSetting
+{
+    outline: 1px solid green;
 }
 
 #axis-Y.showgrid,
