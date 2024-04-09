@@ -1,7 +1,7 @@
 let showGrid = true;
-let activeElement, yAxis, xAxis, externalContainer, dummyContainer, elementSettingsContainer, hideGridCheckbox, paperdollSettingsContainer, spriteCardinals, paperdollCardinals;
+let activeElement, yAxis, xAxis, externalContainer, elementSettingsContainer, hideGridCheckbox, spriteCardinals;
 
-const spriteToTextDivMap = {};
+const spriteToSettingsDivMap = {};
 let elements = [];
 
 let presets = {
@@ -13,9 +13,6 @@ let presets = {
                 top: -20,
                 right : 29,
                 bottom : 48,
-                width : 104,
-                height : 142,
-                offsetY : -35,
             },
         ]
     },
@@ -33,13 +30,9 @@ document.addEventListener('DOMContentLoaded', function() {
     yAxis = document.getElementById("axis-Y");
     xAxis = document.getElementById("axis-X");
     externalContainer = document.getElementById("externalContainer");
-    dummyContainer = document.getElementById("dummyContainer");
     elementSettingsContainer = document.getElementById("elementSettingsContainer");
-    paperdollSettingsContainer = document.getElementById("paperdollSettingsContainer");
     hideGridCheckbox = document.getElementById("hideGridCheckbox");
     spriteCardinals = document.getElementById("spriteCardinals");
-    paperdollCardinals = document.getElementById("paperdollCardinals");
-    spriteToTextDivMap[dummyContainer] = paperdollCardinals;
 
     document.getElementById("spritePositioner").addEventListener("keypress", function(event){
         if (event.key !== 'Enter')
@@ -47,35 +40,14 @@ document.addEventListener('DOMContentLoaded', function() {
         handlePassedCardinals();
     })
     
-    loadPresetDummy("Head");
     toggleGrid();
 }, false);
 
 function loadPresetDummy(_key)
 {
-    dummyContainer.querySelectorAll(".paperdollImg").forEach(element => {
-        element.remove();
-    });
-    paperdollSettingsContainer.innerHTML = "";
     let preset = presets[_key];
     preset.Parts.forEach(element => {
-        let img = document.createElement("img");
-        img.classList.add("paperdollImg");
-        img.draggable = false;
-        img.src = element.src;
-        dummyContainer.append(img);
-        let settingsDiv = document.createElement("div");
-        let name = document.createElement("div");
-        name.classList.add("settingsNameContainer");
-        name.innerHTML = element.src;
-        settingsDiv.append(name);
-        let zIndex = document.createElement("input");
-        zIndex.type = "number";
-        zIndex.onclick = () => img.style.zIndex = zIndex.value;
-        settingsDiv.append(zIndex);
-        paperdollSettingsContainer.append(settingsDiv);
-        // resize the bounding box
-        img.onload = () => positionWithCardinals(dummyContainer, element)
+        positionWithCardinals(addSprite(element.src, element.src), element);
     });
 }
 
@@ -156,9 +128,10 @@ function addSprite(_src, _name)
     let settingsDiv = document.createElement("div");
     settingsDiv.classList.add("spriteDummy");
     settingsDiv.addEventListener("click", (event) => {event.stopPropagation(); toggleElement(container, name)})
+    spriteToSettingsDivMap[container] = settingsDiv;
     let offsetText = document.createElement("div");
+    offsetText.classList.add("spriteOffsetText");
     settingsDiv.append(offsetText);
-    spriteToTextDivMap[container] =  offsetText;
     offsetText.addEventListener("click", (event) => {event.stopPropagation();navigator.clipboard.writeText(offsetText.innerHTML)})
     
     let nameLabel = document.createElement("div");
@@ -184,6 +157,7 @@ function addSprite(_src, _name)
         container.style.height = image.height;
     };  
     setActiveElement(container)
+    return container;
 }
 
 function setActiveElement(_elem)
@@ -239,7 +213,6 @@ function toggleGrid(event)
     {
         yAxis.classList.add("showgrid");
         xAxis.classList.add("showgrid");
-        dummyContainer.classList.add("showgrid");
         document.querySelectorAll(".spriteContainer").forEach(element => {
             element.classList.add("showgrid");
         });
@@ -248,7 +221,6 @@ function toggleGrid(event)
     {
         yAxis.classList.remove("showgrid");
         xAxis.classList.remove("showgrid");
-        dummyContainer.classList.remove("showgrid");
         document.querySelectorAll(".spriteContainer").forEach(element => {
             element.classList.remove("showgrid");
         });
@@ -287,7 +259,7 @@ function updateCardinalText(el, target = null)
     const rect = getCenterOffsets(el.getBoundingClientRect());
     const parse = (_el) => Math.round(parseFloat(_el));
     if (target == null)
-        target =  spriteToTextDivMap[el]
+        target = spriteToSettingsDivMap[el].querySelector(".spriteOffsetText");
     target.innerHTML = `left: "${parse(rect.left)}" right: "${parse(rect.right)}" top: "${parse(rect.top)}" bottom: "${parse(rect.bottom)}"`;
 }
 
@@ -306,6 +278,13 @@ document.addEventListener( "keydown",
             break;
         case "ArrowDown":
             moveImage(0, +1)
+            break;
+        case "Delete":
+            if (activeElement)
+            {
+                spriteToSettingsDivMap[activeElement].remove();
+                activeElement.remove();
+            }
             break;
      }
     },

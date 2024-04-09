@@ -1,13 +1,14 @@
 body
 {
     background-color: rgb(170, 138, 89);
+    display:flex;
+    justify-content: center;
 }
 
 #contentcontainer
 {
     display: flex;
     justify-content: center;
-    align-self: center;
 }
 
 #externalContainer

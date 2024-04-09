@@ -8,7 +8,6 @@
             <div id="externalContainer" ondrop="drop_handler(event)" ondragover="dragover_handler(event)">
                 <div id="axis-Y" class="showgrid"></div>
                 <div id="axis-X" class="showgrid"></div>
-                <div id="dummyContainer" class="showgrid" draggable="false">
                 </div>
             </div>
             <div id ="otherstuffcontainer">
@@ -23,13 +22,12 @@
                     <input type="checkbox" onchange="toggleGrid(event)" id="hideGridCheckbox">
                     <label for="hideGridCheckbox" >Hide grid</label>
                 </div>
-                <div><b>Paperdoll settings</b></div>
-                <div id ="paperdollCardinals" onclick="navigator.clipboard.writeText(this.innerHTML)">-1</div>
-                <select name="paperdollPresets" id="paperdollPresets" onchange="loadPresetDummy(this.value)">
+                <div><b>Presets</b></div>
+                <select name="paperdollPresets" id="paperdollPresets">
                     <option value="Head">Head</option>
                     <option value="Body">Body</option>
-                  </select>
-                <div id="paperdollSettingsContainer"></div>
+                </select>
+                <input type="button" onclick="loadPresetDummy(document.getElementById('paperdollPresets').value)" value="Load preset"/>
                 <div><b>Sprite settings</b></div>
                 <div>Paste offsets and push enter to position active sprite.</div>
                 <input type="text" id ="spritePositioner"/>
