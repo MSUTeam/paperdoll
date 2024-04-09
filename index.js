@@ -111,55 +111,79 @@ function positionWithCardinals(_element, _cardinals)
     _element.style.bottom =   (bottom)  + "px";
     updateCardinalText(_element);
 }
-
-function addSprite(ev)
+function loadFile(ev)
 {
     let tgt = ev.target,
-    files = tgt.files;
+        files = tgt.files;
     if (FileReader && files && files.length) {
         let fr = new FileReader();
         fr.onload = function () {
-            var image = new Image();
-            image.src = fr.result;
-
-            let container = createNewImageContainer();
-            externalContainer.append(container);
-            elements.push(container);
-            container.querySelector("img").src = fr.result;
-            let settingsDiv = document.createElement("div");
-            settingsDiv.classList.add("spriteDummy");
-            settingsDiv.addEventListener("click", (event) => {event.stopPropagation(); toggleElement(container, name)})
-            let offsetText = document.createElement("div");
-            settingsDiv.append(offsetText);
-            spriteToTextDivMap[container] =  offsetText;
-            offsetText.addEventListener("click", (event) => {event.stopPropagation();navigator.clipboard.writeText(offsetText.innerHTML)})
-           
-            let nameLabel = document.createElement("div");
-            nameLabel.innerHTML = "Click box to hide element";
-            settingsDiv.append(nameLabel);
-            let name = document.createElement("span");
-            name.classList.add("settingsNameContainer");
-            name.innerHTML = files[0].name;
-            
-            settingsDiv.append(name);
-            let zIndexLabel = document.createElement("div");
-            zIndexLabel.innerHTML="Z-Index";
-            settingsDiv.append(zIndexLabel);
-            let zIndex = document.createElement("input");
-            zIndex.type = "number";
-            zIndex.onclick = (event) => {event.stopPropagation(); container.style.zIndex = zIndex.value};
-            settingsDiv.append(zIndex);
-            elementSettingsContainer.append(settingsDiv);
-           
-
-            image.onload = function() {
-                container.style.width = image.width;
-                container.style.height = image.height;
-            };  
-            setActiveElement(container)
+            addSprite(fr.result, files[0].name)
         }
         fr.readAsDataURL(files[0]);
     }
+}
+
+function drop_handler(ev) {
+    ev.preventDefault();
+    if (ev.dataTransfer.files.length > 0) {
+        [...ev.dataTransfer.items].forEach((item, i) => {
+            let fr = new FileReader();
+            fr.onload = function () {
+                addSprite(fr.result, item)
+            }
+            fr.readAsDataURL(item.getAsFile());
+        });
+        return;
+    }
+
+    const dropTop = externalContainer.getBoundingClientRect().top;
+    const dropLeft = externalContainer.getBoundingClientRect().left;
+    activeElement.style.position = "absolute";
+    activeElement.style.left = ev.clientX - offsetX - dropLeft + 'px';
+    activeElement.style.top = ev.clientY - offsetY - dropTop + 'px';
+}
+
+function addSprite(_src, _name)
+{
+    var image = new Image();
+    image.src = _src;
+
+    let container = createNewImageContainer();
+    externalContainer.append(container);
+    elements.push(container);
+    container.querySelector("img").src = _src;
+    let settingsDiv = document.createElement("div");
+    settingsDiv.classList.add("spriteDummy");
+    settingsDiv.addEventListener("click", (event) => {event.stopPropagation(); toggleElement(container, name)})
+    let offsetText = document.createElement("div");
+    settingsDiv.append(offsetText);
+    spriteToTextDivMap[container] =  offsetText;
+    offsetText.addEventListener("click", (event) => {event.stopPropagation();navigator.clipboard.writeText(offsetText.innerHTML)})
+    
+    let nameLabel = document.createElement("div");
+    nameLabel.innerHTML = "Click box to hide element";
+    settingsDiv.append(nameLabel);
+    let name = document.createElement("span");
+    name.classList.add("settingsNameContainer");
+    name.innerHTML = _name;
+    
+    settingsDiv.append(name);
+    let zIndexLabel = document.createElement("div");
+    zIndexLabel.innerHTML="Z-Index";
+    settingsDiv.append(zIndexLabel);
+    let zIndex = document.createElement("input");
+    zIndex.type = "number";
+    zIndex.onclick = (event) => {event.stopPropagation(); container.style.zIndex = zIndex.value};
+    settingsDiv.append(zIndex);
+    elementSettingsContainer.append(settingsDiv);
+    
+
+    image.onload = function() {
+        container.style.width = image.width;
+        container.style.height = image.height;
+    };  
+    setActiveElement(container)
 }
 
 function setActiveElement(_elem)
@@ -240,16 +264,6 @@ function onDragStart(ev){
 
     offsetX = ev.clientX - rect.x;
     offsetY = ev.clientY - rect.y;
-}
-
-function drop_handler(ev) {
-    ev.preventDefault();
-
-    const dropTop = externalContainer.getBoundingClientRect().top;
-    const dropLeft = externalContainer.getBoundingClientRect().left;
-    activeElement.style.position = "absolute";
-    activeElement.style.left = ev.clientX - offsetX - dropLeft + 'px';
-    activeElement.style.top = ev.clientY - offsetY - dropTop + 'px';
 }
 
 function dragover_handler(ev) {
