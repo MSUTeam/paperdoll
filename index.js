@@ -127,12 +127,12 @@ function loadFile(ev)
 function drop_handler(ev) {
     ev.preventDefault();
     if (ev.dataTransfer.files.length > 0) {
-        [...ev.dataTransfer.items].forEach((item, i) => {
+        [...ev.dataTransfer.files].forEach((file, i) => {
             let fr = new FileReader();
             fr.onload = function () {
-                addSprite(fr.result, item)
+                addSprite(fr.result, file.name)
             }
-            fr.readAsDataURL(item.getAsFile());
+            fr.readAsDataURL(file);
         });
         return;
     }
