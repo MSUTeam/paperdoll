@@ -1,12 +1,6 @@
 let showGrid = true;
 let activeElement, yAxis, xAxis, externalContainer, elementSettingsContainer, hideGridCheckbox, spriteCardinals;
-
-function getCorrespondingObject(_container, _setting) {
-    if (_container)
-        return document.querySelector(`#spriteSetting_${_container.dataset.spriteID}`)
-    else return document.querySelector(`#spriteContainer_${_container.dataset.spriteID}`)
-}
-let elements = [];
+const spriteMap = new Map()
 
 let presets = {
     "Head" : {    
@@ -57,7 +51,6 @@ function loadImage(_src)
     });
 }
 
-let spriteID = 0;
 function addSprite(_img, _name)
 {
     const container = createNewImageContainer();
@@ -90,11 +83,7 @@ function addSprite(_img, _name)
     zIndex.onclick = (event) => {event.stopPropagation(); container.style.zIndex = zIndex.value};
     settingsDiv.append(zIndex);
 
-    spriteID++;
-    container.dataset.spriteID = spriteID;
-    container.id = "spriteContainer_" + spriteID;
-    settingsDiv.dataset.spriteID = spriteID;
-    settingsDiv.id = "spriteSetting_" + spriteID;
+    spriteMap.set(container, settingsDiv);
 
     setActiveElement(container);
     positionWithCardinals(container, {});
@@ -232,12 +221,12 @@ function setActiveElement(_elem)
 {
     if (activeElement)
     {
-        getCorrespondingObject(activeElement).classList.remove("activeSetting");
+        spriteMap.get(activeElement).classList.remove("activeSetting");
         activeElement.classList.remove("activeElement");
     }
     activeElement = _elem;
     activeElement.classList.add("activeElement");
-    getCorrespondingObject(activeElement).classList.add("activeSetting");
+    spriteMap.get(activeElement).classList.add("activeSetting");
 }
 
 function toggleElement(_obj, _name)
@@ -283,7 +272,7 @@ function updateCardinalText(el, target = null)
     const rect = getCenterOffsets(el.getBoundingClientRect());
     const parse = (_el) => Math.round(parseFloat(_el));
     if (target == null)
-        target = getCorrespondingObject(activeElement).querySelector(".spriteOffsetText");
+        target = spriteMap.get(activeElement).querySelector(".spriteOffsetText");
     target.innerHTML = `left: "${parse(rect.left)}" right: "${parse(rect.right)}" top: "${parse(rect.top)}" bottom: "${parse(rect.bottom)}"`;
 }
 
@@ -306,7 +295,7 @@ document.addEventListener( "keydown",
         case "Delete":
             if (activeElement)
             {
-                getCorrespondingObject(activeElement).remove();
+                spriteMap.get(activeElement).remove();
                 activeElement.remove();
                 activeElement = null;
             }
