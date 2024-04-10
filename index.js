@@ -76,21 +76,39 @@ function addSprite(_img, _name)
 
     let settingsDiv = document.createElement("div");
     settingsDiv.classList.add("spriteSetting");
-    settingsDiv.addEventListener("click", (event) => {event.stopPropagation(); toggleElement(container, name)})
+    settingsDiv.addEventListener("click", (event) => { event.stopPropagation(); setActiveElement(container)})
     elementSettingsContainer.append(settingsDiv);
+
+    let name = document.createElement("span");
+    name.classList.add("settingsNameContainer");
+    name.innerHTML = _name;
+    settingsDiv.append(name);
 
     let offsetText = document.createElement("div");
     offsetText.classList.add("spriteOffsetText");
     settingsDiv.append(offsetText);
     offsetText.addEventListener("click", (event) => {event.stopPropagation();navigator.clipboard.writeText(offsetText.innerHTML)})
-    
-    let nameLabel = document.createElement("div");
-    nameLabel.innerHTML = "Click box to hide element";
-    settingsDiv.append(nameLabel);
-    let name = document.createElement("span");
-    name.classList.add("settingsNameContainer");
-    name.innerHTML = _name;
-    settingsDiv.append(name);
+
+    const opacitySliderText = document.createElement("div");
+    opacitySliderText.innerHTML = "Opacity";
+    settingsDiv.append(opacitySliderText);
+    const opacitySlider = document.createElement("input");
+    opacitySlider.type = "range";
+    opacitySlider.min = 0.00;
+    opacitySlider.max = 1.0;
+    opacitySlider.value = 1.0;
+    opacitySlider.step = 0.01;
+    opacitySlider.addEventListener("input", function(event){
+        container.style.opacity = this.value;
+        console.log(this.value)
+        if (this.value < 0.01)
+            container.style.display = "none";
+        else
+            container.style.display = "block";
+    })
+    settingsDiv.append(opacitySlider);
+
+
 
     let zIndexLabel = document.createElement("div");
     zIndexLabel.innerHTML="Z-Index";
@@ -248,8 +266,7 @@ function setActiveElement(_elem)
 
 function toggleElement(_obj, _name)
 {
-    _obj.style.display = _obj.style.display == "none" ? "block" : "none";
-    _name.style.color = _name.style.color == "red" ? "black" : "red";
+
 }
 
 function toggleGrid(event)
