@@ -1,29 +1,37 @@
 let showGrid = true;
-let activeElement, yAxis, xAxis, externalContainer, elementSettingsContainer, hideGridCheckbox, spriteCardinals;
+let activeElement, yAxis, xAxis, externalContainer, elementSettingsContainer, hideGridCheckbox, spriteCardinals, paperdollPresets;
 const spriteMap = new Map()
 
 let presets = {
-    "Head" : {    
-        Parts : [
-            {
-                "src" : "head.png",
-                left : -21,
-                top: -20,
-                right : 29,
-                bottom : 48,
-            },
-        ]
-    },
-    "Body" : {
-        Parts : [
-            {
-                "src" : "body.png",
-                top: -48,
-                bottom : 10,
-            },
-        ]
-    },
+    "Head" : [
+        {
+            "src" : "head.png",
+            left : -21,
+            top: -20,
+            right : 29,
+            bottom : 48,
+        },
+    ],
+    "Body" : [
+        {
+            "src" : "body.png",
+            top: -48,
+            bottom : 10,
+        },
+    ],
+    "Tactical Tile" : [
+        {
+            "src" : "tactical_tile.png",
+        },
+    ],
+    "World Tile" : [
+        {
+            "src" : "world_tile.png",
+        },
+    ]
 }
+presets["Full Body"] = [presets["Body"][0], presets["Head"][0]];
+
 document.addEventListener('DOMContentLoaded', function() {
     yAxis = document.getElementById("axis-Y");
     xAxis = document.getElementById("axis-X");
@@ -31,12 +39,21 @@ document.addEventListener('DOMContentLoaded', function() {
     elementSettingsContainer = document.getElementById("elementSettingsContainer");
     hideGridCheckbox = document.getElementById("hideGridCheckbox");
     spriteCardinals = document.getElementById("spriteCardinals");
+    paperdollPresets = document.getElementById("paperdollPresets");
 
     document.getElementById("spritePositioner").addEventListener("keypress", function(event){
         if (event.key !== 'Enter')
             return;
         handlePassedCardinals();
     })
+    for (const [key, value] of Object.entries(presets))
+    {
+        const option = document.createElement("option");
+        option.value = key;
+        option.innerHTML = key;
+        paperdollPresets.append(option);
+    }
+
     
     toggleGrid();
 }, false);
@@ -121,7 +138,7 @@ function addObserver(_div)
 function loadPresetDummy(_key)
 {
     let preset = presets[_key];
-    preset.Parts.forEach(element => {
+    preset.forEach(element => {
         loadImage(element.src)
         .then(img => addSprite(img, element.src))
         .then(container => positionWithCardinals(container, element))
