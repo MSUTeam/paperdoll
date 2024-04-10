@@ -298,15 +298,19 @@ document.addEventListener( "keydown",
      switch (event.key)
      {
         case "ArrowRight":
+            event.preventDefault();
             moveImage(1, 0)
             break;
         case "ArrowLeft":
+            event.preventDefault();
             moveImage(-1, 0)
             break;
         case "ArrowUp":
+            event.preventDefault();
             moveImage(0, -1)
             break;
         case "ArrowDown":
+            event.preventDefault();
             moveImage(0, +1)
             break;
         case "Delete":
