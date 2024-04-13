@@ -72,9 +72,9 @@ body
     outline: 1px solid green;
 }
 
-#axis-Y.showgrid,
-#axis-X.showgrid,
-#dummyContainer.showgrid
+#externalContainer[showgrid="true"] #axis-Y,
+#externalContainer[showgrid="true"] #axis-X,
+#externalContainer[showgrid="true"] #dummyContainer
 {
     outline: 1px solid rgba(255, 235, 205, 0.521);
 }
@@ -84,12 +84,12 @@ body
     z-index: 1;
 }
 
-.spriteContainer.activeElement.showgrid
+#externalContainer[showgrid="true"] .spriteContainer.activeElement
 {
     outline: 1px solid green;
 }
 
-.spriteContainer.showgrid
+#externalContainer[showgrid="true"] .spriteContainer
 {
     outline: 1px solid black;
 }

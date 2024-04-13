@@ -1,4 +1,3 @@
-let showGrid = true;
 let activeElement, yAxis, xAxis, externalContainer, elementSettingsContainer, hideGridCheckbox, spriteCardinals, paperdollPresets;
 const spriteMap = new Map()
 
@@ -129,8 +128,6 @@ function createNewImageContainer(_src)
     let div = document.createElement("div");
     div.draggable = true;
     div.classList.add("spriteContainer");
-    if (!hideGridCheckbox.checked)
-        div.classList.add("showgrid");
     div.addEventListener("click", (event) => setActiveElement(div));
     div.addEventListener("dragstart", (event) => onDragStart(event));
     addObserver(div);
@@ -263,30 +260,9 @@ function setActiveElement(_elem)
     spriteMap.get(activeElement).classList.add("activeSetting");
 }
 
-function toggleElement(_obj, _name)
+function toggleGrid(_)
 {
-
-}
-
-function toggleGrid(event)
-{
-    var checked = hideGridCheckbox.checked;
-    if (!checked)
-    {
-        yAxis.classList.add("showgrid");
-        xAxis.classList.add("showgrid");
-        document.querySelectorAll(".spriteContainer").forEach(element => {
-            element.classList.add("showgrid");
-        });
-    }
-    else
-    {
-        yAxis.classList.remove("showgrid");
-        xAxis.classList.remove("showgrid");
-        document.querySelectorAll(".spriteContainer").forEach(element => {
-            element.classList.remove("showgrid");
-        });
-    }
+    externalContainer.setAttribute("showgrid", !hideGridCheckbox.checked);
 }
 
 function getCenterOffsets(_element)
