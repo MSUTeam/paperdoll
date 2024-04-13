@@ -100,7 +100,6 @@ function addSprite(_img, _name)
     opacitySlider.step = 0.01;
     opacitySlider.addEventListener("input", function(event){
         container.style.opacity = this.value;
-        console.log(this.value)
         if (this.value < 0.01)
             container.style.display = "none";
         else
