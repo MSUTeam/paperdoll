@@ -7,8 +7,8 @@ body
 #externalContainer
 {
     position:relative;
-    width: 401px;
-    height: 401px;
+    width: 400px;
+    height: 400px;
     background-image: url("./assets/generic_background_large_border.png");
     background-size: 100% 100%;
     display: flex;
@@ -30,7 +30,7 @@ body
 {
     position:absolute;
     width:0px;
-    left: 201px;
+    left: 200px;
     height:100%;
 }
 #axis-X   {
