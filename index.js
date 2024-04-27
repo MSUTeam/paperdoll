@@ -6,8 +6,8 @@ let presets = {
         {
             "src" : "./assets/head.png",
             left : -21,
-            top: -20,
             right : 29,
+            top: -20,
             bottom : 48,
         },
     ],
@@ -22,8 +22,8 @@ let presets = {
         {
             "src" : "./assets/head_dead.png",
             left : -44,
-            top: -58,
             right : 16,
+            top: -58,
             bottom : 0,
         },
     ],
@@ -31,8 +31,8 @@ let presets = {
         {
             "src" : "./assets/body_dead.png",
             left : -65,
-            top: -57,
             right : 66,
+            top: -57,
             bottom : 53,
         },
     ],
@@ -329,7 +329,7 @@ document.addEventListener( "keydown",
             break;
         case "ArrowDown":
             event.preventDefault();
-            moveImage(0, +1)
+            moveImage(0, 1)
             break;
         case "Delete":
             if (activeElement)
