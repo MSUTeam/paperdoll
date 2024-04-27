@@ -310,6 +310,9 @@ function updateCardinalText(el, target = null)
 
 document.addEventListener( "keydown",
     (event) => {
+        if(event.target === document.getElementById("spritePositioner")){
+            return;
+         }
      switch (event.key)
      {
         case "ArrowRight":
