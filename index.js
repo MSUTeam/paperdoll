@@ -4,7 +4,7 @@ const spriteMap = new Map()
 let presets = {
     "Head" : [
         {
-            "src" : "head.png",
+            "src" : "./assets/head.png",
             left : -21,
             top: -20,
             right : 29,
@@ -13,23 +13,42 @@ let presets = {
     ],
     "Body" : [
         {
-            "src" : "body.png",
+            "src" : "./assets/body.png",
             top: -48,
             bottom : 10,
         },
     ],
+    "Head Dead" : [
+        {
+            "src" : "./assets/head_dead.png",
+            left : -44,
+            top: -58,
+            right : 16,
+            bottom : 0,
+        },
+    ],
+    "Body Dead" : [
+        {
+            "src" : "./assets/body_dead.png",
+            left : -65,
+            top: -57,
+            right : 66,
+            bottom : 53,
+        },
+    ],
     "Tactical Tile" : [
         {
-            "src" : "tactical_tile.png",
+            "src" : "./assets/tactical_tile.png",
         },
     ],
     "World Tile" : [
         {
-            "src" : "world_tile.png",
+            "src" : "./assets/world_tile.png",
         },
     ]
 }
 presets["Full Body"] = [presets["Body"][0], presets["Head"][0]];
+presets["Full Dead Body"] = [presets["Body Dead"][0], presets["Head Dead"][0]];
 
 document.addEventListener('DOMContentLoaded', function() {
     yAxis = document.getElementById("axis-Y");
@@ -178,10 +197,14 @@ function positionWithCardinals(_element, _cardinals)
     const img = _element.querySelector("img");
     const containerRect = externalContainer.getBoundingClientRect();
     // either get the cardinals from the preset, or use the img source natural values
-    const left =    (containerRect.width/2)       + (_cardinals.left    || -(img.naturalWidth/2));
-    const right =   (containerRect.width/2)       + (-_cardinals.right  || -(img.naturalWidth/2));
-    const top =     (containerRect.height/2)      + (-_cardinals.bottom || -(img.naturalHeight/2));
-    const bottom =  (containerRect.height/2)      + (_cardinals.top     || -(img.naturalHeight/2));
+    const addLeft =     _cardinals.left !== undefined ?   _cardinals.left  : -(img.naturalWidth/2);
+    const addRight =    _cardinals.right !== undefined ? -_cardinals.right : -(img.naturalWidth/2);
+    const addTop =      _cardinals.bottom !== undefined ? -_cardinals.bottom : -(img.naturalHeight/2);
+    const addBottom =   _cardinals.top   !== undefined ?  _cardinals.top :  -(img.naturalHeight/2);
+    const left =    (containerRect.width/2)  + addLeft;
+    const right =   (containerRect.width/2)  + addRight;
+    const top =     (containerRect.height/2) + addTop;
+    const bottom =  (containerRect.height/2) + addBottom;
     _element.style.left =     (left)  + "px";
     _element.style.right =    (right)  + "px";
     _element.style.top =      (top) + "px";
@@ -281,7 +304,7 @@ function updateCardinalText(el, target = null)
     const rect = getCenterOffsets(el.getBoundingClientRect());
     const parse = (_el) => Math.round(parseFloat(_el));
     if (target == null)
-        target = spriteMap.get(activeElement).querySelector(".spriteOffsetText");
+        target = spriteMap.get(el).querySelector(".spriteOffsetText");
     target.innerHTML = `left: "${parse(rect.left)}" right: "${parse(rect.right)}" top: "${parse(rect.top)}" bottom: "${parse(rect.bottom)}"`;
 }
 
