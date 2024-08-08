@@ -396,11 +396,14 @@ document.addEventListener( "keydown",
 
 function saveAsImg(ev)
 {
+    let src = externalContainer.style.backgroundImage;
+    externalContainer.style.backgroundImage = "none";
     domtoimage.toPng(externalContainer)
     .then(function (dataUrl) {
         var link = document.createElement('a');
         link.download = "paperdoll_" + Date.now() + ".png";
         link.href = dataUrl;
         link.click();
+        externalContainer.style.backgroundImage = src;
     });
 }
