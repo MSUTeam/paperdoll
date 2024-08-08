@@ -43,10 +43,12 @@ body
 .spriteContainer
 {
     position:absolute;
-    resize: both;
     overflow:hidden;
 }
-
+.spriteContainer:hover
+{
+    resize: both;
+}
 .spriteImg
 {
     width: 100%;
