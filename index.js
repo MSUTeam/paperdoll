@@ -399,7 +399,7 @@ function saveAsImg(ev)
     domtoimage.toPng(externalContainer)
     .then(function (dataUrl) {
         var link = document.createElement('a');
-        link.download = 'my-image-name.jpeg';
+        link.download = "paperdoll_" + Date.now() + ".png";
         link.href = dataUrl;
         link.click();
     });
