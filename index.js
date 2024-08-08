@@ -248,10 +248,10 @@ function loadXMLFile(ev)
                     const id = sprite.getAttribute("id");
                     const cardinals = {
                         id: id,
-                        left: parseInt(sprite.getAttribute("left")) || 0,
-                        right: parseInt(sprite.getAttribute("right")) || 0,
-                        top: parseInt(sprite.getAttribute("top")) || 0,
-                        bottom: parseInt(sprite.getAttribute("bottom")) || 0,
+                        left: parseInt(sprite.getAttribute("left")) || undefined,
+                        right: parseInt(sprite.getAttribute("right")) || undefined,
+                        top: parseInt(sprite.getAttribute("top")) || undefined,
+                        bottom: parseInt(sprite.getAttribute("bottom")) || undefined,
                     }
                     XMLMap[id] = cardinals;
                     spriteMap.forEach((_value, key) => {
