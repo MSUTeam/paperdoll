@@ -255,7 +255,11 @@ function loadXMLFile(ev)
                         top: parseInt(sprite.getAttribute("top")),
                         bottom: parseInt(sprite.getAttribute("bottom")),
                     }
-                    XMLMap[id] = cardinals;
+                    if (isNaN(cardinals.left)) cardinals.left = undefined;
+                    if (isNaN(cardinals.right)) cardinals.right = undefined;
+                    if (isNaN(cardinals.top)) cardinals.top = undefined;
+                    if (isNaN(cardinals.bottom)) cardinals.bottom = undefined;
+                    XMLMap[img] = cardinals;
                     spriteMap.forEach((_value, key) => {
                         if (key.getAttribute("sprite_id") == img)
                             positionWithCardinals(key, cardinals);
