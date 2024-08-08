@@ -103,7 +103,7 @@ function addSprite(_img, _name)
     name.innerHTML = _name;
     settingsDiv.append(name);
     let nameSplit = _name.split("/");
-    let nameStem = nameSplit[nameSplit.length - 1];
+    let nameStem = nameSplit[nameSplit.length - 1].replace('.png','').replace('.jpg','').replace('.jpeg','');
     container.setAttribute("sprite_id", nameStem);
 
     let offsetText = document.createElement("div");
