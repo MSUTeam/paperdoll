@@ -102,7 +102,7 @@ function addSprite(_img, _name)
     name.innerHTML = _name;
     settingsDiv.append(name);
     let nameSplit = _name.split("/");
-    let nameStem = nameSplit[nameSplit.length - 1].replace('.png','').replace('.jpg','').replace('.jpeg','');
+    let nameStem = nameSplit[nameSplit.length - 1];
     container.setAttribute("sprite_id", nameStem);
 
     let offsetText = document.createElement("div");
@@ -245,18 +245,19 @@ function loadXMLFile(ev)
                 for (let y = 0; y < sprites.length; y++)
                 {
                     const sprite = sprites[y];
-                    const id = sprite.getAttribute("id");
+                    let img = sprite.getAttribute("img");
+                    let nameSplit = img.split("/");
+                    img = nameSplit[nameSplit.length - 1];
                     const cardinals = {
-                        id: id,
-                        left: parseInt(sprite.getAttribute("left")) || undefined,
-                        right: parseInt(sprite.getAttribute("right")) || undefined,
-                        top: parseInt(sprite.getAttribute("top")) || undefined,
-                        bottom: parseInt(sprite.getAttribute("bottom")) || undefined,
+                        img: img,
+                        left: parseInt(sprite.getAttribute("left")),
+                        right: parseInt(sprite.getAttribute("right")),
+                        top: parseInt(sprite.getAttribute("top")),
+                        bottom: parseInt(sprite.getAttribute("bottom")),
                     }
                     XMLMap[id] = cardinals;
                     spriteMap.forEach((_value, key) => {
-                        console.log(key)
-                        if (key.getAttribute("sprite_id") == id)
+                        if (key.getAttribute("sprite_id") == img)
                             positionWithCardinals(key, cardinals);
                     })
                 }
