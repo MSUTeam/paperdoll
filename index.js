@@ -1,7 +1,6 @@
 let activeElement, yAxis, xAxis, externalContainer, elementSettingsContainer, hideGridCheckbox, spriteCardinals, paperdollPresets;
 const spriteMap = new Map()
 var XMLMap = {}
-
 let presets = {
     "Head" : [
         {
@@ -330,6 +329,15 @@ function toggleGrid(_)
     externalContainer.setAttribute("showgrid", !hideGridCheckbox.checked);
 }
 
+function toggleSize(_)
+{
+    let size = toggleSizeCheckbox.checked ? 200 : 400;
+    externalContainer.style.width =  size + "px";
+    externalContainer.style.height = size + "px";
+    yAxis.style.left = size / 2 + "px";
+    xAxis.style.top = size / 2 + "px";
+}
+
 function getCenterOffsets(_element)
 {
     const yRect = yAxis.getBoundingClientRect();
@@ -385,3 +393,14 @@ document.addEventListener( "keydown",
     },
     true,
 );
+
+function saveAsImg(ev)
+{
+    domtoimage.toJpeg(externalContainer)
+    .then(function (dataUrl) {
+        var link = document.createElement('a');
+        link.download = 'my-image-name.jpeg';
+        link.href = dataUrl;
+        link.click();
+    });
+}
