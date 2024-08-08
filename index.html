@@ -27,10 +27,12 @@
                 </select>
                 <input type="button" onclick="loadPresetDummy(document.getElementById('paperdollPresets').value)" value="Load preset"/>
                 <div><b>Sprite settings</b></div>
-                <div>Paste offsets and push enter to position active sprite.</div>
+                <div>Paste cardinals (left, right, top, bottom) and push enter to position active sprite.</div>
                 <input type="text" id ="spritePositioner"/>
                 <div>Upload new sprite</div>
-                <input onchange="loadFile(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
+                <input onchange="loadFile(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" multiple="multiple"/>
+                <div>Upload sprite XML</div>
+                <input onchange="loadXMLFile(event)" type="file" id="avatarXML" name="avatarXML" accept="text/xml" multiple="multiple"/>
                 <div id="elementSettingsContainer"></div>
             </div>
         </div>

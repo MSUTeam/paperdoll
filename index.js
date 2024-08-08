@@ -1,5 +1,6 @@
 let activeElement, yAxis, xAxis, externalContainer, elementSettingsContainer, hideGridCheckbox, spriteCardinals, paperdollPresets;
 const spriteMap = new Map()
+var XMLMap = {}
 
 let presets = {
     "Head" : [
@@ -101,6 +102,9 @@ function addSprite(_img, _name)
     name.classList.add("settingsNameContainer");
     name.innerHTML = _name;
     settingsDiv.append(name);
+    let nameSplit = _name.split("/");
+    let nameStem = nameSplit[nameSplit.length - 1];
+    container.setAttribute("sprite_id", nameStem);
 
     let offsetText = document.createElement("div");
     offsetText.classList.add("spriteOffsetText");
@@ -125,8 +129,6 @@ function addSprite(_img, _name)
     })
     settingsDiv.append(opacitySlider);
 
-
-
     let zIndexLabel = document.createElement("div");
     zIndexLabel.innerHTML="Z-Index";
     settingsDiv.append(zIndexLabel);
@@ -138,7 +140,10 @@ function addSprite(_img, _name)
     spriteMap.set(container, settingsDiv);
 
     setActiveElement(container);
-    positionWithCardinals(container, {});
+    let cardinals = {};
+    if (nameStem in XMLMap)
+        cardinals = XMLMap[nameStem]
+    positionWithCardinals(container, cardinals);
     return container;
 }
 
@@ -216,12 +221,49 @@ function loadFile(ev)
     let tgt = ev.target,
         files = tgt.files;
     if (FileReader && files && files.length) {
-        let fr = new FileReader();
-        fr.onload = function () {
-            loadImage(fr.result)
-            .then(img => addSprite(img, files[0].name))
+        for (let x = 0; x < files.length; x++)
+        {
+            let fr = new FileReader();
+            fr.onload = function () {
+                loadImage(fr.result)
+                .then(img => addSprite(img, files[x].name))
+            }
+            fr.readAsDataURL(files[x]);
         }
-        fr.readAsDataURL(files[0]);
+    }
+}
+function loadXMLFile(ev)
+{
+    let tgt = ev.target,
+        files = tgt.files;
+    if (FileReader && files && files.length) {
+        for (let x = 0; x < files.length; x++) {
+            let fr = new FileReader();
+            let parser = new DOMParser();
+            fr.onload = function () {
+                const doc = parser.parseFromString(fr.result, "text/xml");
+                const sprites = doc.getElementsByTagName("sprite");
+                for (let y = 0; y < sprites.length; y++)
+                {
+                    const sprite = sprites[y];
+                    const id = sprite.getAttribute("id");
+                    const cardinals = {
+                        id: id,
+                        left: parseInt(sprite.getAttribute("left")) || 0,
+                        right: parseInt(sprite.getAttribute("right")) || 0,
+                        top: parseInt(sprite.getAttribute("top")) || 0,
+                        bottom: parseInt(sprite.getAttribute("bottom")) || 0,
+                    }
+                    XMLMap[id] = cardinals;
+                    spriteMap.forEach((_value, key) => {
+                        console.log(key)
+                        if (key.getAttribute("sprite_id") == id)
+                            positionWithCardinals(key, cardinals);
+                    })
+                }
+            }
+            fr.readAsText(files[x]);
+        }
     }
 }
 let previousX;
