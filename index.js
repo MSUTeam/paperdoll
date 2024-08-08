@@ -101,7 +101,10 @@ function addSprite(_img, _name)
     name.classList.add("settingsNameContainer");
     name.innerHTML = _name;
     settingsDiv.append(name);
-    let nameSplit = _name.split("/");
+    let nameSplit;
+    let nameSplitBack = _name.split("\\");
+    let nameSplitFront = _name.split("/");
+    nameSplit = nameSplitBack.length >= nameSplitFront.length ? nameSplitBack : nameSplitFront;
     let nameStem = nameSplit[nameSplit.length - 1];
     container.setAttribute("sprite_id", nameStem);
 
@@ -246,7 +249,10 @@ function loadXMLFile(ev)
                 {
                     const sprite = sprites[y];
                     let img = sprite.getAttribute("img");
-                    let nameSplit = img.split("/");
+                    let nameSplit;
+                    let nameSplitBack = img.split("\\");
+                    let nameSplitFront = img.split("/");
+                    nameSplit = nameSplitBack.length >= nameSplitFront.length ? nameSplitBack : nameSplitFront;
                     img = nameSplit[nameSplit.length - 1];
                     const cardinals = {
                         img: img,
