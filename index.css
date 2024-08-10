@@ -2,8 +2,48 @@ body
 {
     background-color: rgb(170, 138, 89);
     display:flex;
+    flex-direction:row;
+    flex-wrap: wrap;
+    margin:2rem;
+}
+#info
+{
+    width:100vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+#mainContainer
+{
+    display:grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+}
+#contentcontainer
+{
+    grid-row: 1;
+}
+@media only screen and (min-width: 600px) {
+    #mainContainer
+    {
+        display:grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr;
+    }
+    #contentcontainer
+    {
+        grid-column: 2;
+    }
 }
 
+#mainContainer > div
+{
+    border: 1px solid black !important;
+    border-radius: 5%;
+    padding: 1rem;
+}
 #externalContainer
 {
     position:relative;
@@ -14,6 +54,10 @@ body
     display: flex;
     align-items: center;
     justify-content: center;
+}
+#externalContainer.backgroundVisible
+{
+    background-image: none;
 }
 #dummyContainer
 {
@@ -55,23 +99,38 @@ body
     height: 100%;
     pointer-events: none;
 }
-
+.spriteOffsetText:hover
+{
+    font-weight: 700;
+    cursor: pointer;
+}
 .spriteSetting
 {
     width: 30rem;
     margin: 2px;
-    outline: 1px solid black;
+    padding: 0.5rem;
     margin-bottom: 3px;
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 .spriteSetting:hover
 {
-    margin: 2px;
     outline: 2px solid black;
 }
 .spriteSetting.activeSetting
 {
-    outline: 1px solid green;
+    outline: 2px solid #1354B1;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.spriteSettingsName
+{
+    font-size : 1vw;
+    text-align : center;
+    font-weight: bold;
+    color:white;
+    border-bottom : 1px solid black;
+    padding-bottom: 1rem;
 }
 
 #externalContainer[showgrid="true"] #axis-Y,
@@ -88,7 +147,7 @@ body
 
 #externalContainer[showgrid="true"] .spriteContainer.activeElement
 {
-    outline: 1px solid green;
+    outline: 1px solid #1354B1;
 }
 
 #externalContainer[showgrid="true"] .spriteContainer
@@ -96,18 +155,24 @@ body
     outline: 1px solid black;
 }
 
-#otherstuffcontainer
+#spriteSettingsContainer
 {
-    width: 401px;
-    padding-left: 2rem;
 }
 
-.settingsNameContainer
-{
-    width: 15rem;
-}
 
 #spritePositioner
 {
     width: 100%;
+}
+
+
+#contentcontainer
+{
+    margin-left:auto;
+    margin-right: auto;
+}
+
+#spriteUploadContainer
+{
+    padding-top: 2rem;
 }

@@ -5,19 +5,38 @@
         <link  rel="stylesheet" href="index.css"></style>
     </head>
     <body>
-        <div id = "contentcontainer">
-            <div id="externalContainer" showgrid="true" ondrop="drop_handler(event)" ondragover="dragover_handler(event)">
-                <div id="axis-Y"></div>
-                <div id="axis-X"></div>
+        <div id="info"><b>Paperdoll</b><br>
+            This tool is used to get BB cardinal (left, right, top, bottom) values in a more convenient way.<br>
+            The grid lines are what the offsets are calculated off.<br>
+            Upload a new sprite with the button below.<br>
+            The currently "active" sprite has a blue border. A sprite can be activated by clicking on it. Use arrow keys to position element, or drag and drop it.<br>
+        </div>
+        <div id ="mainContainer">
+            <div id ="spriteSettingsContainer">
+                <div><b>Sprite settings</b></div>
+                <div>Paste cardinals (left, right, top, bottom) and push enter to position active sprite.</div>
+                <input type="text" id ="spritePositioner"/>
+                <div id="presetsContainer">
+                    <div>Presets: common sprites used for templating. These are added the same way as any other image you upload. Presets overwrite XML definitions.</div>
+                    <select name="paperdollPresets" id="paperdollPresets">
+                    </select>
+                    <input type="button" onclick="loadPresetDummy(document.getElementById('paperdollPresets').value)" value="Load preset"/>
+                </div>
+                <div>Upload a sprite (.png or .jpg file) to add to the grid. </div>
+                <input onchange="loadFile(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" multiple="multiple"/>
+                <div id ="spriteUploadContainer">
+                    <div>Current sprites on the grid. The currently "active" sprite has a green border. A sprite can be activated by clicking on it. Use arrow keys to position element, or drag and drop it.</div>
+                    <div id="elementSettingsContainer"></div>
                 </div>
             </div>
-            <div id ="otherstuffcontainer">
-                <div><b>Info:</b><br>
-                    This tool is used to get BB cardinal (left, right, top, bottom) values in a more convenient way.<br>
-                    The grid lines are what the offsets are calculated off.<br>
-                    Upload a new sprite with the button below.<br>
-                    The currently "active" sprite has a green border. A sprite can be activated by clicking on it. Use arrow keys to position element, or drag and drop it.<br>
-                    
+            <div id = "contentcontainer">
+                <div id="externalContainer" showgrid="true" ondrop="drop_handler(event)" ondragover="dragover_handler(event)">
+                    <div id="axis-Y"></div>
+                    <div id="axis-X"></div>
+                </div>
+                <div>
+                    <input type="checkbox" onchange="toggleBackground(event)" id="toggleBackgroundCheckbox">
+                    <label for="toggleBackgroundCheckbox" >Hide background</label>
                 </div>
                 <div>
                     <input type="checkbox" onchange="toggleGrid(event)" id="hideGridCheckbox">
@@ -25,21 +44,17 @@
                 </div>
                 <div>
                     <input type="checkbox" onchange="toggleSize(event)" id="toggleSizeCheckbox">
-                    <label for="toggleSizeCheckbox" >Toggle bounding box size</label>
+                    <label for="toggleSizeCheckbox" >Decrease size</label>
                 </div>
-                <div><b>Presets</b></div>
-                <select name="paperdollPresets" id="paperdollPresets">
-                </select>
-                <input type="button" onclick="loadPresetDummy(document.getElementById('paperdollPresets').value)" value="Load preset"/>
-                <div><b>Sprite settings</b></div>
-                <div>Paste cardinals (left, right, top, bottom) and push enter to position active sprite.</div>
-                <input type="text" id ="spritePositioner"/>
-                <div>Upload new sprite</div>
-                <input onchange="loadFile(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" multiple="multiple"/>
-                <div>Upload sprite XML</div>
-                <input onchange="loadXMLFile(event)" type="file" id="avatarXML" name="avatarXML" accept="text/xml" multiple="multiple"/>
-                <div id="elementSettingsContainer"></div>
                 <button onclick="saveAsImg(event)">save as img</button>
+            </div>
+
+            <div id="xmlSettingsContainer">
+                <span>Upload sprite XML</span>
+                <input onchange="loadXMLFile(event)" type="file" id="avatarXML" name="avatarXML" accept="text/xml" multiple="multiple"/>
+                <div id="xmlUploadContainer">
+
+                </div>
             </div>
         </div>
     </body>

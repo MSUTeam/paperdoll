@@ -1,6 +1,6 @@
 let activeElement, yAxis, xAxis, externalContainer, elementSettingsContainer, hideGridCheckbox, spriteCardinals, paperdollPresets;
 const spriteMap = new Map()
-var XMLMap = {}
+const XMLMap = new Map()
 let presets = {
     "Head" : [
         {
@@ -71,9 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         option.innerHTML = key;
         paperdollPresets.append(option);
     }
-
-    
-    toggleGrid();
+    document.querySelectorAll('input[type=checkbox]').forEach(i => i.checked = false);
 }, false);
 
 function loadImage(_src)
@@ -91,16 +89,6 @@ function addSprite(_img, _name)
     const container = createNewImageContainer();
     container.append(_img)
     externalContainer.append(container);
-
-    let settingsDiv = document.createElement("div");
-    settingsDiv.classList.add("spriteSetting");
-    settingsDiv.addEventListener("click", (event) => { event.stopPropagation(); setActiveElement(container)})
-    elementSettingsContainer.append(settingsDiv);
-
-    let name = document.createElement("span");
-    name.classList.add("settingsNameContainer");
-    name.innerHTML = _name;
-    settingsDiv.append(name);
     let nameSplit;
     let nameSplitBack = _name.split("\\");
     let nameSplitFront = _name.split("/");
@@ -108,14 +96,66 @@ function addSprite(_img, _name)
     let nameStem = nameSplit[nameSplit.length - 1];
     container.setAttribute("sprite_id", nameStem);
 
-    let offsetText = document.createElement("div");
-    offsetText.classList.add("spriteOffsetText");
-    settingsDiv.append(offsetText);
-    offsetText.addEventListener("click", (event) => {event.stopPropagation();navigator.clipboard.writeText(offsetText.innerHTML)})
+    const settingsDiv = createNewImageSettingsContainer(container, _name)
+    elementSettingsContainer.append(settingsDiv)
+    spriteMap.set(container, settingsDiv);
 
-    const opacitySliderText = document.createElement("div");
-    opacitySliderText.innerHTML = "Opacity";
-    settingsDiv.append(opacitySliderText);
+    addObserver(container);
+    setActiveElement(container);
+    let cardinals = {};
+    if (XMLMap.has(nameStem))
+        cardinals = XMLMap.get(nameStem);
+    positionWithCardinals(container, cardinals);
+    return container;
+}
+
+function createNewImageContainer(_src)
+{
+    let div = document.createElement("div");
+    div.draggable = true;
+    div.classList.add("spriteContainer");
+    div.addEventListener("click", (event) => setActiveElement(div));
+    div.addEventListener("dragstart", (event) => onDragStart(event));
+    return div;
+}
+
+function createNewImageSettingsContainer(container, _name)
+{
+    let settingsDiv = document.createElement("div");
+    settingsDiv.classList.add("spriteSetting");
+    settingsDiv.addEventListener("click", (event) => { event.stopPropagation(); setActiveElement(container)})
+
+    let name = document.createElement("div");
+    name.innerHTML = _name;
+    name.classList.add("spriteSettingsName")
+
+    let offsetContainer = document.createElement("div");
+    let offsetText = document.createElement("span");
+    offsetText.classList.add("spriteOffsetText");
+    offsetContainer.append(offsetText);
+    offsetText.addEventListener("click", (event) => {
+        event.stopPropagation();
+        navigator.clipboard.writeText(offsetText.innerHTML);
+        const copiedText = document.createElement("span");
+        copiedText.textContent = "Copied!";
+        copiedText.style.opacity = "1";
+        copiedText.style.transition = "opacity 1s";
+        copiedText.style.paddingLeft = "1rem"
+
+        offsetContainer.appendChild(copiedText);
+    
+        setTimeout(() => {
+            copiedText.style.opacity = "0";
+            setTimeout(() => {
+                copiedText.remove();
+            }, 1500);
+        }, 0);
+    })
+
+    const inputContainer = document.createElement("div");
+    inputContainer.style.display = "flex";
+
+    const opacitySliderText = document.createTextNode("Opacity");
     const opacitySlider = document.createElement("input");
     opacitySlider.type = "range";
     opacitySlider.min = 0.00;
@@ -129,35 +169,17 @@ function addSprite(_img, _name)
         else
             container.style.display = "block";
     })
-    settingsDiv.append(opacitySlider);
-
-    let zIndexLabel = document.createElement("div");
-    zIndexLabel.innerHTML="Z-Index";
-    settingsDiv.append(zIndexLabel);
+    let zIndexLabel = document.createElement("span");
+    zIndexLabel.innerHTML = "Z-Index";
+    zIndexLabel.style.marginLeft = "1rem";
     let zIndex = document.createElement("input");
     zIndex.type = "number";
-    zIndex.onclick = (event) => {event.stopPropagation(); container.style.zIndex = zIndex.value};
-    settingsDiv.append(zIndex);
+    zIndex.onclick = (event) => { event.stopPropagation(); container.style.zIndex = zIndex.value };
 
-    spriteMap.set(container, settingsDiv);
-
-    setActiveElement(container);
-    let cardinals = {};
-    if (nameStem in XMLMap)
-        cardinals = XMLMap[nameStem]
-    positionWithCardinals(container, cardinals);
-    return container;
-}
-
-function createNewImageContainer(_src)
-{
-    let div = document.createElement("div");
-    div.draggable = true;
-    div.classList.add("spriteContainer");
-    div.addEventListener("click", (event) => setActiveElement(div));
-    div.addEventListener("dragstart", (event) => onDragStart(event));
-    addObserver(div);
-    return div;
+    inputContainer.append(opacitySliderText, opacitySlider, zIndexLabel, zIndex)
+    
+    settingsDiv.append(name, offsetContainer, inputContainer);
+    return settingsDiv;
 }
 
 function addObserver(_div)
@@ -265,16 +287,35 @@ function loadXMLFile(ev)
                     if (isNaN(cardinals.right)) cardinals.right = undefined;
                     if (isNaN(cardinals.top)) cardinals.top = undefined;
                     if (isNaN(cardinals.bottom)) cardinals.bottom = undefined;
-                    XMLMap[img] = cardinals;
+                    XMLMap.set(img, cardinals);
                     spriteMap.forEach((_value, key) => {
                         if (key.getAttribute("sprite_id") == img)
+                        {
                             positionWithCardinals(key, cardinals);
+                            return false;
+                        }
                     })
                 }
+                updateXmlSettings();
             }
             fr.readAsText(files[x]);
         }
     }
+}
+
+function updateXmlSettings()
+{
+    let settingsContainer = document.querySelector("#xmlUploadContainer");
+    settingsContainer.innerHTML = "";
+    XMLMap.forEach((value, key) => {
+        let entry = document.createElement("div");
+        entry.innerHTML = "<b>" + value.img + "</b>:";
+        if (value.left != undefined) entry.innerHTML += ` left: "${value.left}"`;
+        if (value.right != undefined) entry.innerHTML += ` right: "${value.right}"`;
+        if (value.top != undefined) entry.innerHTML += ` top: "${value.top}"`;
+        if (value.bottom != undefined) entry.innerHTML += ` bottom: "${value.bottom}"`;
+        settingsContainer.append(entry);
+    })
 }
 let previousX;
 let previousY
@@ -333,6 +374,19 @@ function setActiveElement(_elem)
     activeElement = _elem;
     activeElement.classList.add("activeElement");
     spriteMap.get(activeElement).classList.add("activeSetting");
+}
+
+function toggleBackground(_)
+{
+    let checkbox = document.querySelector("#toggleBackgroundCheckbox");
+    if (checkbox.checked)
+    {
+        externalContainer.classList.add("backgroundVisible");
+    }
+    else
+    {
+        externalContainer.classList.remove("backgroundVisible");
+    }    
 }
 
 function toggleGrid(_)
@@ -407,14 +461,11 @@ document.addEventListener( "keydown",
 
 function saveAsImg(ev)
 {
-    let src = externalContainer.style.backgroundImage;
-    externalContainer.style.backgroundImage = "none";
-    domtoimage.toPng(externalContainer)
+    domtoimage.toJpeg(externalContainer)
     .then(function (dataUrl) {
         var link = document.createElement('a');
         link.download = "paperdoll_" + Date.now() + ".png";
         link.href = dataUrl;
         link.click();
-        externalContainer.style.backgroundImage = src;
     });
 }
