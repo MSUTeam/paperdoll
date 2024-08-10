@@ -25,7 +25,7 @@
                 <div>Upload a sprite (.png or .jpg file) to add to the grid. </div>
                 <input onchange="loadFile(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" multiple="multiple"/>
                 <div id ="spriteUploadContainer">
-                    <div>Current sprites on the grid. The currently "active" sprite has a green border. A sprite can be activated by clicking on it. Use arrow keys to position element, or drag and drop it.</div>
+                    <div>Current sprites on the grid. The currently "active" sprite has a blue border. A sprite can be activated by clicking on it. Use arrow keys to position element, or drag and drop it.</div>
                     <div id="elementSettingsContainer"></div>
                 </div>
             </div>
@@ -50,7 +50,19 @@
             </div>
 
             <div id="xmlSettingsContainer">
-                <span>Upload sprite XML</span>
+                <span><b>Upload sprite XML</b></span>
+                <p>You can upload XML files with sprite definitions to speed up development. Each XML file must have an outer element (arbitrary), and any number of <sprite> elements within.<br>
+                Each <code>&ltsprite&gt</code> element must have an <code>img</code> tab, whose value must match the filename of the sprite you want to target. 
+                Only the last part is looked at, so if you are uploading an image file <code>./my/cool/assets/head.png</code> and a <code&ltsprite&gt</code> with <code>./vanilla/head.png</code>, they will match on <code>head.png</code>.<br>
+                Each <code>&ltsprite&gt</code> tag can then have <code>left</code>,<code>right</code>,<code>top</code>, or <code>bottom</code> tags. If you don't need one of them, leave it blank, don't set it to 0.<br>
+                Example:<br>
+                <code>
+                    &ltsprites&gt<br>
+                        &ltsprite img="test\head.png" top="-100" bottom="68"/&gt<br>
+                        &ltsprite img="test/body.png" top="-62" bottom="68" left="0"/&gt<br>
+                    &lt/sprites&gt<br>
+                </code>
+                When the XML file is loaded, it will try to match any existing sprites on the grid.<br>When you subsequently load new sprites, it will look at the existing XML definitions.</p>
                 <input onchange="loadXMLFile(event)" type="file" id="avatarXML" name="avatarXML" accept="text/xml" multiple="multiple"/>
                 <div id="xmlUploadContainer">
 
