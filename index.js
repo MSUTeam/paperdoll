@@ -331,7 +331,7 @@ function loadXMLFile(ev)
 function addXMLGroup(group) {
     let groupContainer = document.createElement("div");
     groupContainer.classList.add("xmlGroup");
-    groupContainer.innerHTML = `<b>${group.name}</b>`;
+    groupContainer.innerHTML = `<h4>${group.name}</h4>`;
     let groupSpriteDefContainer = document.createElement("div");
     groupSpriteDefContainer.classList.add("xmlGroupSpriteDefContainer");
     groupContainer.append(groupSpriteDefContainer);

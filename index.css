@@ -104,13 +104,10 @@ input[type="file"]:hover {
     margin: 0.5rem 0;
 } */
 
-div > b {
-    font-size: 1.125rem;
+h1, h2, h3, h4 {
     color: #2d3748;
-    display: block;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
     border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 0.5rem;
 }
 /* Code styling */
 code {

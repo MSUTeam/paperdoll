@@ -5,7 +5,7 @@
         <link  rel="stylesheet" href="index.css"></style>
     </head>
     <body>
-        <div id="info"><b>Paperdoll</b><br>
+        <div id="info"><h1>Paperdoll</h1>
             This tool is used to get BB cardinal (left, right, top, bottom) values in a more convenient way.<br>
             The grid lines are what the offsets are calculated off.<br>
             Upload a new sprite with the button below.<br>
@@ -13,7 +13,7 @@
         </div>
         <div id ="mainContainer">
             <div id ="spriteSettingsContainer">
-                <div><b>Sprite settings</b></div>
+                <h3>Sprite settings</h3>
                 <div>Paste cardinals (left, right, top, bottom) and push enter to position active sprite.</div>
                 <input type="text" id ="spritePositioner"/>
                 <div id="presetsContainer">
@@ -50,7 +50,7 @@
             </div>
 
             <div id="xmlSettingsContainer">
-                <span><b>Upload sprite XML</b></span>
+                <h3>Upload sprite XML</h3>
                 <p>You can upload XML files with sprite definitions to speed up development. Each XML file must have an outer element (arbitrary), and any number of <sprite> elements within.<br>
                 Each <code>&ltsprite&gt</code> element must have an <code>img</code> tab, whose value must match the filename of the sprite you want to target. 
                 Only the last part is looked at, so if you are uploading an image file <code>./my/cool/assets/head.png</code> and a XML <code>&ltsprite&gt</code> with <code>./vanilla/head.png</code>, they will match on <code>head.png</code>.<br>
