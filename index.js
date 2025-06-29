@@ -83,14 +83,90 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('input[type=checkbox]').forEach(i => i.checked = false);
 }, false);
 
-function loadImage(_src)
+function getCenterOffsets(_element)
 {
-    return new Promise(resolve => {
-        let img = document.createElement("img");
-        img.classList.add("spriteImg");
-        img.onload = () => resolve(img);
-        img.src = _src;
+    const containerRect = externalContainer.getBoundingClientRect();
+    const width = containerRect.width;
+    const height = containerRect.height;
+    const left =        _element.left    - containerRect.left - (width / 2);
+    const right =       _element.right   - containerRect.left - (width / 2);
+    const top =         _element.top     - containerRect.top  - (height / 2);
+    const bottom =      _element.bottom  - containerRect.top  - (height / 2);
+    return {left:left, right:right, top:-bottom, bottom:-top}
+}
+
+function cardinalRectToText(rect) {
+    const parse = (_el) => Math.round(parseFloat(_el));
+    const left = rect.left !== undefined ? `left="${parse(rect.left)}"` : "";
+    const right = rect.right !== undefined ? ` right="${parse(rect.right)}"` : "";
+    const top = rect.top !== undefined ? ` top="${parse(rect.top)}"` : "";
+    const bottom = rect.bottom !== undefined ? ` bottom="${parse(rect.bottom)}"` : "";
+    return `${left}${right}${top}${bottom}`;
+}
+
+function cardinalTextToRect(_text)
+{
+    const ret = {};
+    const cards = ["left", "right", "top", "bottom"];
+    cards.forEach(element => {
+        const rex = new RegExp(`"?${element}"? ?= ?"(-?\\d+)"`);
+        const result = _text.match(rex);
+        if (result != null)
+            ret[element] = parseInt(result[1]);
     });
+    return ret;
+}
+
+function invertHorizontalCardinals(_cardinals) {
+    const ret = {};
+    ret.left = _cardinals.right !== undefined ?      _cardinals.right * -1 : undefined;
+    ret.right = _cardinals.left !== undefined ?    _cardinals.left * -1 : undefined;
+    ret.top = _cardinals.top;
+    ret.bottom = _cardinals.bottom;
+    return ret;
+}
+function invertVerticalCardinals(_cardinals) {
+    const ret = {};
+    ret.left = _cardinals.left;
+    ret.right = _cardinals.right;
+    ret.top = _cardinals.top !== undefined ? _cardinals.top * -1 : undefined;
+    ret.bottom = _cardinals.bottom !== undefined ? _cardinals.bottom * -1 : undefined;
+    return ret;
+}
+
+function handlePassedCardinals()
+{
+    const text = document.getElementById("spritePositioner").value;
+    const cardinals = cardinalTextToRect(text);
+    positionWithCardinals(activeElement, cardinals);
+}
+
+function positionWithCardinals(_element, _cardinals)
+{
+    const img = _element.querySelector("img");
+    const containerRect = externalContainer.getBoundingClientRect();
+    // either get the cardinals from the preset, or use the img source natural values
+    const addLeft =     _cardinals.left !== undefined ?   _cardinals.left  : -(img.naturalWidth/2);
+    const addRight =    _cardinals.right !== undefined ? _cardinals.right * -1 : -(img.naturalWidth/2);
+    const addTop =      _cardinals.bottom !== undefined ? _cardinals.bottom  * -1 : -(img.naturalHeight/2);
+    const addBottom =   _cardinals.top   !== undefined ?  _cardinals.top :  -(img.naturalHeight/2);
+    const left =    (containerRect.width/2)  + addLeft;
+    const right =   (containerRect.width/2)  + addRight;
+    const top =     (containerRect.height/2) + addTop;
+    const bottom =  (containerRect.height/2) + addBottom;
+    _element.style.left =     (left)  + "px";
+    _element.style.right =    (right)  + "px";
+    _element.style.top =      (top) + "px";
+    _element.style.bottom =   (bottom)  + "px";
+    updateCardinalText(_element);
+}
+
+function updateCardinalText(el, target = null)
+{
+    const rect = getCenterOffsets(el.getBoundingClientRect());
+    if (target == null)
+        target = spriteMap.get(el).querySelector(".sprite-def-offset-text");
+    target.innerHTML = cardinalRectToText(rect);
 }
 
 function addSprite(_img, _name)
@@ -198,9 +274,35 @@ function createNewImageSettingsContainer(container, _name)
     zIndex.type = "number";
     zIndex.onclick = (event) => { event.stopPropagation(); container.style.zIndex = zIndex.value };
     zIndexContainer.append(zIndexLabel, zIndex);
-    inputContainer.append(opacitySliderText, opacitySlider, zIndexContainer)
+
+    let flipContainer = document.createElement("div");
+    flipContainer.classList.add("flip-container");
+    let flipLabel = document.createElement("span");
+    flipLabel.innerHTML = "Flip sprite";
+    let flip = document.createElement("input");
+    flip.type = "checkbox";
+    flip.addEventListener("change", function(event) {
+        event.stopPropagation(); 
+        container.classList.toggle("flipped", this.checked);
+        const cardinalText = settingsDiv.querySelector(".sprite-def-offset-text");
+        const rect = cardinalTextToRect(cardinalText.innerHTML);
+        const flippedCardinals = invertHorizontalCardinals(rect);
+        positionWithCardinals(container, flippedCardinals);
+    })
+    flipContainer.append(flipLabel, flip);
+    inputContainer.append(opacitySliderText, opacitySlider, zIndexContainer, flipContainer)
     
     return settingsDiv;
+}
+
+function loadImage(_src)
+{
+    return new Promise(resolve => {
+        let img = document.createElement("img");
+        img.classList.add("spriteImg");
+        img.onload = () => resolve(img);
+        img.src = _src;
+    });
 }
 
 function addObserver(_div)
@@ -228,39 +330,6 @@ function loadPresetDummy(_key)
     });
 }
 
-function handlePassedCardinals()
-{
-    const ret = {};
-    const text = document.getElementById("spritePositioner").value;
-    const cards = ["left", "right", "top", "bottom"];
-    cards.forEach(element => {
-        const rex = new RegExp(`"?${element}"? ?= ?"(-?\\d+)"`);
-        const result = text.match(rex);
-        if (result != null)
-            ret[element] = parseInt(result[1]);
-    });
-    positionWithCardinals(activeElement, ret);
-}
-
-function positionWithCardinals(_element, _cardinals)
-{
-    const img = _element.querySelector("img");
-    const containerRect = externalContainer.getBoundingClientRect();
-    // either get the cardinals from the preset, or use the img source natural values
-    const addLeft =     _cardinals.left !== undefined ?   _cardinals.left  : -(img.naturalWidth/2);
-    const addRight =    _cardinals.right !== undefined ? -_cardinals.right : -(img.naturalWidth/2);
-    const addTop =      _cardinals.bottom !== undefined ? -_cardinals.bottom : -(img.naturalHeight/2);
-    const addBottom =   _cardinals.top   !== undefined ?  _cardinals.top :  -(img.naturalHeight/2);
-    const left =    (containerRect.width/2)  + addLeft;
-    const right =   (containerRect.width/2)  + addRight;
-    const top =     (containerRect.height/2) + addTop;
-    const bottom =  (containerRect.height/2) + addBottom;
-    _element.style.left =     (left)  + "px";
-    _element.style.right =    (right)  + "px";
-    _element.style.top =      (top) + "px";
-    _element.style.bottom =   (bottom)  + "px";
-    updateCardinalText(_element);
-}
 function loadFile(ev)
 {
     let tgt = ev.target,
@@ -357,7 +426,7 @@ function addXMLGroup(group) {
         XMLMap.set(key, element);
         let spriteDef = createSpriteDefContainer();
         spriteDef.querySelector(".sprite-def-name").innerHTML = key;
-        spriteDef.querySelector(".sprite-def-offset-text").innerHTML = getCardinalText(element);
+        spriteDef.querySelector(".sprite-def-offset-text").innerHTML = cardinalRectToText(element);
         groupSpriteDefContainer.append(spriteDef);
     };
     document.querySelector("#xmlUploadContainer").append(groupContainer);
@@ -447,34 +516,6 @@ function toggleSize(_)
     externalContainer.style.height = size + "px";
     yAxis.style.left = size / 2 + "px";
     xAxis.style.top = size / 2 + "px";
-}
-
-function getCenterOffsets(_element)
-{
-    const yRect = yAxis.getBoundingClientRect();
-    const xRect = xAxis.getBoundingClientRect();
-    const left =  _element.left     - yRect.left;
-    const right =  _element.right   - yRect.left;
-    const top = _element.top     - xRect.top;
-    const bottom = _element.bottom     - xRect.top;
-    return {left:left, right:right, top:-bottom, bottom:-top}
-}
-
-function getCardinalText(rect) {
-    const parse = (_el) => Math.round(parseFloat(_el));
-    const left = rect.left !== undefined ? `left="${parse(rect.left)}` : "";
-    const right = rect.right !== undefined ? ` right="${parse(rect.right)}"` : "";
-    const top = rect.top !== undefined ? ` top="${parse(rect.top)}"` : "";
-    const bottom = rect.bottom !== undefined ? ` bottom="${parse(rect.bottom)}"` : "";
-    return `${left}${right}${top}${bottom}`;
-}
-
-function updateCardinalText(el, target = null)
-{
-    const rect = getCenterOffsets(el.getBoundingClientRect());
-    if (target == null)
-        target = spriteMap.get(el).querySelector(".sprite-def-offset-text");
-    target.innerHTML = getCardinalText(rect);
 }
 
 document.addEventListener( "keydown",

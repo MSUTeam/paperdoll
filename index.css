@@ -241,6 +241,10 @@ code {
     height: 100%;
     pointer-events: none;
 }
+.spriteContainer.flipped .spriteImg
+{
+    transform: scaleX(-1);
+}
 .sprite-def-offset-text:hover
 {
     font-weight: 700;
