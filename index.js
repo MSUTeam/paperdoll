@@ -45,6 +45,15 @@ let presets = {
         {
             "src" : "./assets/world_tile.png",
         },
+    ],
+    "Armored Man": [
+        {
+            "src": "./assets/armored_man.png",
+            left: -47,
+            right: 49,
+            top: -70,
+            bottom: 52
+        }
     ]
 }
 presets["Full Body"] = [presets["Body"][0], presets["Head"][0]];
