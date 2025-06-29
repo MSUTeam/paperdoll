@@ -119,41 +119,52 @@ function createNewImageContainer(_src)
     return div;
 }
 
-function createNewImageSettingsContainer(container, _name)
+function createSpriteDefContainer(params)
 {
-    let settingsDiv = document.createElement("div");
-    settingsDiv.classList.add("spriteSetting");
-    settingsDiv.addEventListener("click", (event) => { event.stopPropagation(); setActiveElement(container)})
-
-    let name = document.createElement("div");
-    name.innerHTML = _name;
-    name.classList.add("spriteSettingsName")
-
-    let offsetContainer = document.createElement("div");
-    let offsetText = document.createElement("span");
-    offsetText.classList.add("spriteOffsetText");
-    offsetContainer.append(offsetText);
+    const template = `
+    <div class="sprite-def">
+        <div class="sprite-def-name"></div>
+        <div class="sprite-def-offset-container">
+            <span class="sprite-def-offset-text"></span>
+        </div>
+    </div>`;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(template, "text/html");
+    let offsetText = doc.querySelector(".sprite-def-offset-text");
     offsetText.addEventListener("click", (event) => {
         event.stopPropagation();
         navigator.clipboard.writeText(offsetText.innerHTML);
         const copiedText = document.createElement("span");
         copiedText.textContent = "Copied!";
+        copiedText.style.position = "absolute";
+        copiedText.style.right = "50px";
         copiedText.style.opacity = "1";
         copiedText.style.transition = "opacity 1s";
         copiedText.style.paddingLeft = "1rem"
-
-        offsetContainer.appendChild(copiedText);
+    
+        offsetText.appendChild(copiedText);
     
         setTimeout(() => {
             copiedText.style.opacity = "0";
             setTimeout(() => {
                 copiedText.remove();
-            }, 1500);
+            }, 500);
         }, 0);
     })
+    return doc.body.firstChild;
+}
+
+function createNewImageSettingsContainer(container, _name)
+{
+    let settingsDiv = createSpriteDefContainer();
+    settingsDiv.addEventListener("click", (event) => { event.stopPropagation(); setActiveElement(container)})
+
+    let name = settingsDiv.querySelector(".sprite-def-name");
+    name.innerHTML = _name;
 
     const inputContainer = document.createElement("div");
-    inputContainer.style.display = "flex";
+    inputContainer.classList.add("sprite-settings-inputs");
+    settingsDiv.append(inputContainer);
 
     const opacitySliderText = document.createTextNode("Opacity");
     const opacitySlider = document.createElement("input");
@@ -169,16 +180,17 @@ function createNewImageSettingsContainer(container, _name)
         else
             container.style.display = "block";
     })
+    let zIndexContainer = document.createElement("div");
+    zIndexContainer.classList.add("zIndexContainer");
     let zIndexLabel = document.createElement("span");
     zIndexLabel.innerHTML = "Z-Index";
     zIndexLabel.style.marginLeft = "1rem";
     let zIndex = document.createElement("input");
     zIndex.type = "number";
     zIndex.onclick = (event) => { event.stopPropagation(); container.style.zIndex = zIndex.value };
-
-    inputContainer.append(opacitySliderText, opacitySlider, zIndexLabel, zIndex)
+    zIndexContainer.append(zIndexLabel, zIndex);
+    inputContainer.append(opacitySliderText, opacitySlider, zIndexContainer)
     
-    settingsDiv.append(name, offsetContainer, inputContainer);
     return settingsDiv;
 }
 
@@ -261,11 +273,24 @@ function loadXMLFile(ev)
     let tgt = ev.target,
         files = tgt.files;
     if (FileReader && files && files.length) {
+        const groups = [];
         for (let x = 0; x < files.length; x++) {
             let fr = new FileReader();
             let parser = new DOMParser();
             fr.onload = function () {
+                const group = {
+                    name: files[x].name,
+                    spriteDefs: {},
+                };
                 const doc = parser.parseFromString(fr.result, "text/xml");
+                const header = doc.querySelector("brush");
+                if (header != null) {
+                    const headerName = header.getAttribute("name");
+                    if (headerName != null && headerName.length > 0)
+                    {
+                        group.name += " - " + headerName;
+                    }
+                }
                 const sprites = doc.getElementsByTagName("sprite");
                 for (let y = 0; y < sprites.length; y++)
                 {
@@ -287,7 +312,7 @@ function loadXMLFile(ev)
                     if (isNaN(cardinals.right)) cardinals.right = undefined;
                     if (isNaN(cardinals.top)) cardinals.top = undefined;
                     if (isNaN(cardinals.bottom)) cardinals.bottom = undefined;
-                    XMLMap.set(img, cardinals);
+                    group.spriteDefs[img] = cardinals;
                     spriteMap.forEach((_value, key) => {
                         if (key.getAttribute("sprite_id") == img)
                         {
@@ -296,27 +321,39 @@ function loadXMLFile(ev)
                         }
                     })
                 }
-                updateXmlSettings();
+                addXMLGroup(group);
             }
             fr.readAsText(files[x]);
         }
     }
 }
 
-function updateXmlSettings()
-{
-    let settingsContainer = document.querySelector("#xmlUploadContainer");
-    settingsContainer.innerHTML = "";
-    XMLMap.forEach((value, key) => {
-        let entry = document.createElement("div");
-        entry.innerHTML = "<b>" + value.img + "</b>:";
-        if (value.left != undefined) entry.innerHTML += ` left: "${value.left}"`;
-        if (value.right != undefined) entry.innerHTML += ` right: "${value.right}"`;
-        if (value.top != undefined) entry.innerHTML += ` top: "${value.top}"`;
-        if (value.bottom != undefined) entry.innerHTML += ` bottom: "${value.bottom}"`;
-        settingsContainer.append(entry);
-    })
+function addXMLGroup(group) {
+    let groupContainer = document.createElement("div");
+    groupContainer.classList.add("xmlGroup");
+    groupContainer.innerHTML = `<b>${group.name}</b>`;
+    let groupSpriteDefContainer = document.createElement("div");
+    groupSpriteDefContainer.classList.add("xmlGroupSpriteDefContainer");
+    groupContainer.append(groupSpriteDefContainer);
+    groupContainer.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (groupSpriteDefContainer.style.display == "none") {
+            groupSpriteDefContainer.style.display = "block";
+        }
+        else {
+            groupSpriteDefContainer.style.display = "none";
+        }
+    });
+    for (const [key, element] of Object.entries(group.spriteDefs)) {
+        XMLMap.set(key, element);
+        let spriteDef = createSpriteDefContainer();
+        spriteDef.querySelector(".sprite-def-name").innerHTML = key;
+        spriteDef.querySelector(".sprite-def-offset-text").innerHTML = getCardinalText(element);
+        groupSpriteDefContainer.append(spriteDef);
+    };
+    document.querySelector("#xmlUploadContainer").append(groupContainer);
 }
+
 let previousX;
 let previousY
 let offsetX;
@@ -414,13 +451,21 @@ function getCenterOffsets(_element)
     return {left:left, right:right, top:-bottom, bottom:-top}
 }
 
+function getCardinalText(rect) {
+    const parse = (_el) => Math.round(parseFloat(_el));
+    const left = rect.left !== undefined ? `left="${parse(rect.left)}` : "";
+    const right = rect.right !== undefined ? ` right="${parse(rect.right)}"` : "";
+    const top = rect.top !== undefined ? ` top="${parse(rect.top)}"` : "";
+    const bottom = rect.bottom !== undefined ? ` bottom="${parse(rect.bottom)}"` : "";
+    return `${left}${right}${top}${bottom}`;
+}
+
 function updateCardinalText(el, target = null)
 {
     const rect = getCenterOffsets(el.getBoundingClientRect());
-    const parse = (_el) => Math.round(parseFloat(_el));
     if (target == null)
-        target = spriteMap.get(el).querySelector(".spriteOffsetText");
-    target.innerHTML = `left: "${parse(rect.left)}" right: "${parse(rect.right)}" top: "${parse(rect.top)}" bottom: "${parse(rect.bottom)}"`;
+        target = spriteMap.get(el).querySelector(".sprite-def-offset-text");
+    target.innerHTML = getCardinalText(rect);
 }
 
 document.addEventListener( "keydown",
