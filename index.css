@@ -296,18 +296,70 @@ code {
     cursor: pointer;
 }
 
-.sprite-def .sprite-settings-inputs
-{
+.sprite-def .sprite-settings-inputs {
     display: flex;
-    gap: 0.5rem;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
 }
-.sprite-def .sprite-settings-inputs > * {
-    flex: 1;
-}
-.sprite-def .sprite-settings-inputs .zIndexContainer {
+
+/* Individual control containers */
+.sprite-def .opacity-container,
+.sprite-def .zIndexContainer,
+.sprite-def .flip-container {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: fit-content;
+}
+
+/* Control-specific sizing */
+.sprite-def .opacity-container {
+    flex: 2; /* Give opacity slider more space */
+}
+
+.sprite-def .zIndexContainer {
+    flex: 1;
+}
+
+.sprite-def .flip-container {
+    flex: 0 0 auto; /* Don't grow/shrink, natural size */
+}
+
+/* Input styling */
+.sprite-def .sprite-settings-inputs input[type="range"] {
+    min-width: 80px;
+    flex: 1;
+}
+
+.sprite-def .sprite-settings-inputs input[type="number"] {
+    width: 60px;
+    min-width: 60px;
+}
+
+.sprite-def .sprite-settings-inputs input[type="checkbox"] {
+    margin: 0;
+}
+
+/* Label styling */
+.sprite-def .sprite-settings-inputs span {
+    font-size: 0.9rem;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* Responsive behavior */
+@media (max-width: 600px) {
+    .sprite-def .sprite-settings-inputs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .sprite-def .opacity-container,
+    .sprite-def .zIndexContainer,
+    .sprite-def .flip-container {
+        justify-content: space-between;
+    }
 }
 
 
