@@ -90,20 +90,45 @@ function addKeybinds() {
             if (event.target === document.getElementById("spritePositioner")) {
                 return;
             }
-            if (event.ctrlKey && event.key === "ArrowUp") {
-                event.preventDefault();
-                switchActiveElement(-1);
-                return;
-            }
-            if (event.ctrlKey && event.key === "ArrowDown") {
-                event.preventDefault();
-                switchActiveElement(1);
-                return;
-            }
-            if (event.ctrlKey && event.key === "c") {
-                if (activeElement) {
-                    spriteMap.get(activeElement).querySelector(".sprite-def-offset-text").click();
+            if (event.ctrlKey) {
+                if (event.key === "ArrowRight") {
+                    event.preventDefault();
+                    switchActiveElement(1);
                 }
+                if (event.key === "ArrowLeft") {
+                    event.preventDefault();
+                    switchActiveElement(-1);
+                }
+                if (event.key === "c") {
+                    if (activeElement) {
+                        spriteMap.get(activeElement).querySelector(".sprite-def-offset-text").click();
+                    }
+                }
+                if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    if (activeElement) {
+                        const zIndexContainer = spriteMap.get(activeElement).querySelector(".zIndexContainer input");
+                        if (zIndexContainer.value == "") {
+                            zIndexContainer.value = 1;
+                        }
+                        else { 
+                            zIndexContainer.value = parseInt(zIndexContainer.value) + 1;
+                        }
+                        zIndexContainer.dispatchEvent(new Event("click"));
+                    }
+                }
+                if (event.key === "ArrowDown") {
+                    event.preventDefault();
+                    const zIndexContainer = spriteMap.get(activeElement).querySelector(".zIndexContainer input");
+                    if (zIndexContainer.value == "") {
+                        zIndexContainer.value = 0;
+                    }
+                    else { 
+                        zIndexContainer.value = parseInt(zIndexContainer.value) - 1;
+                    }
+                    zIndexContainer.dispatchEvent(new Event("click"));
+                }
+                return;
             }
 
             switch (event.key) {
