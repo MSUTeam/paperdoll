@@ -81,7 +81,104 @@ document.addEventListener('DOMContentLoaded', function() {
         paperdollPresets.append(option);
     }
     document.querySelectorAll('input[type=checkbox]').forEach(i => i.checked = false);
+    addKeybinds();
 }, false);
+
+function addKeybinds() {
+    document.addEventListener("keydown",
+        (event) => {
+            if (event.target === document.getElementById("spritePositioner")) {
+                return;
+            }
+            if (event.ctrlKey && event.key === "ArrowUp") {
+                event.preventDefault();
+                switchActiveElement(-1);
+                return;
+            }
+            if (event.ctrlKey && event.key === "ArrowDown") {
+                event.preventDefault();
+                switchActiveElement(1);
+                return;
+            }
+            if (event.ctrlKey && event.key === "c") {
+                if (activeElement) {
+                    spriteMap.get(activeElement).querySelector(".sprite-def-offset-text").click();
+                }
+            }
+
+            switch (event.key) {
+                case "ArrowRight":
+                    event.preventDefault();
+                    moveImage(1, 0)
+                    break;
+                case "ArrowLeft":
+                    event.preventDefault();
+                    moveImage(-1, 0)
+                    break;
+                case "ArrowUp":
+                    event.preventDefault();
+                    moveImage(0, -1)
+                    break;
+                case "ArrowDown":
+                    event.preventDefault();
+                    moveImage(0, 1)
+                    break;
+                case "Delete":
+                    if (activeElement) {
+                        spriteMap.get(activeElement).remove();
+                        activeElement.remove();
+                        activeElement = null;
+                    }
+                    break;
+                case "Escape":
+                    if (activeElement) {
+                        spriteMap.get(activeElement).classList.remove("activeSetting");
+                        activeElement.classList.remove("activeElement");
+                        activeElement = null;
+                    }
+                    break;
+                case "f":
+                    if (activeElement) {
+                        const flipCheckbox = spriteMap.get(activeElement).querySelector(".flip-container input");
+                        flipCheckbox.checked = !flipCheckbox.checked;
+                        flipCheckbox.dispatchEvent(new Event("change"));
+                    }
+                    break;
+                case "o":
+                    // toggle opacity slider
+                    // if opacity slider is full, set to empty, else set to full
+                    if (activeElement) {
+                        const opacitySlider = spriteMap.get(activeElement).querySelector("input[type=range]");
+                        if (opacitySlider.value == 1.0) {
+                            opacitySlider.value = 0.0;
+                        } else {
+                            opacitySlider.value = 1.0;
+                        }
+                        opacitySlider.dispatchEvent(new Event("input"));
+                    }
+            }
+        },
+        true,
+    );
+}
+
+function switchActiveElement(_idxToMove)
+{
+    // move either 1 up or down in the list of spriteContainers based on _idxToMove
+    // select externalContainer children that have class "spriteContainer"
+    const containers = Array.from(externalContainer.children).filter(el => el.classList.contains("spriteContainer"));
+    if (containers.length == 0) {
+        return;
+    }
+    let currentIndex = containers.indexOf(activeElement);
+    let newIndex = currentIndex + _idxToMove;
+    if (newIndex >= containers.length) {
+        newIndex = containers.length - 1;
+    } else if (newIndex < 0) {
+        newIndex = 0;
+    }
+    setActiveElement(containers[newIndex]);
+}
 
 function getCenterOffsets(_element)
 {
@@ -119,7 +216,7 @@ function cardinalTextToRect(_text)
 
 function invertHorizontalCardinals(_cardinals) {
     const ret = {};
-    ret.left = _cardinals.right !== undefined ?      _cardinals.right * -1 : undefined;
+    ret.left = _cardinals.right !== undefined ?    _cardinals.right * -1 : undefined;
     ret.right = _cardinals.left !== undefined ?    _cardinals.left * -1 : undefined;
     ret.top = _cardinals.top;
     ret.bottom = _cardinals.bottom;
@@ -129,8 +226,8 @@ function invertVerticalCardinals(_cardinals) {
     const ret = {};
     ret.left = _cardinals.left;
     ret.right = _cardinals.right;
-    ret.top = _cardinals.top !== undefined ? _cardinals.top * -1 : undefined;
-    ret.bottom = _cardinals.bottom !== undefined ? _cardinals.bottom * -1 : undefined;
+    ret.top = _cardinals.bottom !== undefined ? _cardinals.bottom * -1 : undefined;
+    ret.bottom = _cardinals.top !== undefined ? _cardinals.top * -1 : undefined;
     return ret;
 }
 
@@ -275,6 +372,19 @@ function createNewImageSettingsContainer(container, _name)
     zIndex.onclick = (event) => { event.stopPropagation(); container.style.zIndex = zIndex.value };
     zIndexContainer.append(zIndexLabel, zIndex);
 
+    let saveButton = document.createElement("button");
+    saveButton.innerHTML = "Save as PNG";
+    saveButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        domtoimage.toPng(externalContainer)
+        .then(function (dataUrl) {
+            var link = document.createElement('a');
+            link.download = "paperdoll_" + Date.now() + ".png";
+            link.href = dataUrl;
+            link.click();
+        });
+    });
+
     let flipContainer = document.createElement("div");
     flipContainer.classList.add("flip-container");
     let flipLabel = document.createElement("span");
@@ -290,7 +400,7 @@ function createNewImageSettingsContainer(container, _name)
         positionWithCardinals(container, flippedCardinals);
     })
     flipContainer.append(flipLabel, flip);
-    inputContainer.append(opacitySliderText, opacitySlider, zIndexContainer, flipContainer)
+    inputContainer.append(opacitySliderText, opacitySlider, zIndexContainer, saveButton, flipContainer)
     
     return settingsDiv;
 }
@@ -517,42 +627,6 @@ function toggleSize(_)
     yAxis.style.left = size / 2 + "px";
     xAxis.style.top = size / 2 + "px";
 }
-
-document.addEventListener( "keydown",
-    (event) => {
-        if(event.target === document.getElementById("spritePositioner")){
-            return;
-         }
-     switch (event.key)
-     {
-        case "ArrowRight":
-            event.preventDefault();
-            moveImage(1, 0)
-            break;
-        case "ArrowLeft":
-            event.preventDefault();
-            moveImage(-1, 0)
-            break;
-        case "ArrowUp":
-            event.preventDefault();
-            moveImage(0, -1)
-            break;
-        case "ArrowDown":
-            event.preventDefault();
-            moveImage(0, 1)
-            break;
-        case "Delete":
-            if (activeElement)
-            {
-                spriteMap.get(activeElement).remove();
-                activeElement.remove();
-                activeElement = null;
-            }
-            break;
-     }
-    },
-    true,
-);
 
 function saveAsImg(ev)
 {
