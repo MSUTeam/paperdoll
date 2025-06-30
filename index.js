@@ -401,12 +401,42 @@ function createNewImageSettingsContainer(container, _name)
     saveButton.innerHTML = "Save as PNG";
     saveButton.addEventListener("click", (event) => {
         event.stopPropagation();
-        domtoimage.toPng(container)
+        
+        // Create a temporary container
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'relative';
+        tempContainer.style.display = 'inline-block';
+        const containerRect = container.getBoundingClientRect();
+        tempContainer.style.width = containerRect.width + 'px';
+        tempContainer.style.height = containerRect.height + 'px';
+        
+        // Clone the element
+        const clonedElement = container.cloneNode(true);
+        clonedElement.style.position = 'relative';
+        clonedElement.style.top = '';
+        clonedElement.style.left = '';
+        clonedElement.style.right = '';
+        clonedElement.style.bottom = '';
+        
+        tempContainer.appendChild(clonedElement);
+        document.body.appendChild(tempContainer);
+        
+        domtoimage.toPng(tempContainer, {
+            useCORS: true
+        })
         .then(function (dataUrl) {
+            document.body.removeChild(tempContainer);
+            let fileName = _name.split('/');
+            fileName = fileName[fileName.length - 1];
+            
             var link = document.createElement('a');
-            link.download = "paperdoll_" + Date.now() + ".png";
+            link.download = fileName;
             link.href = dataUrl;
             link.click();
+        })
+        .catch(function (error) {
+            console.error('Error generating image:', error);
+            document.body.removeChild(tempContainer);
         });
     });
 
