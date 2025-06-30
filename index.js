@@ -401,7 +401,7 @@ function createNewImageSettingsContainer(container, _name)
     saveButton.innerHTML = "Save as PNG";
     saveButton.addEventListener("click", (event) => {
         event.stopPropagation();
-        domtoimage.toPng(externalContainer)
+        domtoimage.toPng(container)
         .then(function (dataUrl) {
             var link = document.createElement('a');
             link.download = "paperdoll_" + Date.now() + ".png";
