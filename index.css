@@ -193,7 +193,7 @@ code {
 
 #externalContainer.backgroundVisible
 {
-    background-image: none;
+    background-color: transparent;
 }
 #dummyContainer
 {
