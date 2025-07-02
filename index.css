@@ -268,6 +268,12 @@ code {
     background: rgba(102, 126, 234, 0.05);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
+.is-selected-for-grouping
+{
+    border-color: #ea6683 !important;
+    background: rgba(102, 126, 234, 0.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
 .sprite-def-name,
 .XMLGroupName {
     font-size: 0.875rem;

@@ -1,6 +1,7 @@
 <html>
     <head>
         <script src="src/dom-to-image.min.js"></script>
+        <script src="https://unpkg.com/merge-images"></script>
         <script type="text/javascript" src="index.js"></script>
         <link  rel="stylesheet" href="index.css"></style>
     </head>
@@ -38,6 +39,7 @@
                 <input onchange="loadFile(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" multiple="multiple"/>
                 <div id ="spriteUploadContainer">
                     <div>Current sprites on the grid. The currently "active" sprite has a blue border. A sprite can be activated by clicking on it. Use arrow keys to position element, or drag and drop it.</div>
+                    <input type="button" onclick="groupSprites()" value="Group Sprites"/>
                     <div id="elementSettingsContainer"></div>
                 </div>
             </div>

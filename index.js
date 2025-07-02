@@ -1,63 +1,534 @@
-let activeElement, yAxis, xAxis, externalContainer, elementSettingsContainer, hideGridCheckbox, spriteCardinals, paperdollPresets;
-const spriteMap = new Map()
+let yAxis, xAxis, externalContainer, elementSettingsContainer, hideGridCheckbox, spriteCardinals, paperdollPresets;
 const XMLMap = new Map()
-let presets = {
-    "Head" : [
-        {
-            "src" : "./assets/head.png",
-            left : -21,
-            right : 29,
-            top: -20,
-            bottom : 48,
-        },
-    ],
-    "Body" : [
-        {
-            "src" : "./assets/body.png",
-            top: -48,
-            bottom : 10,
-        },
-    ],
-    "Head Dead" : [
-        {
-            "src" : "./assets/head_dead.png",
-            left : -44,
-            right : 16,
-            top: -58,
-            bottom : 0,
-        },
-    ],
-    "Body Dead" : [
-        {
-            "src" : "./assets/body_dead.png",
-            left : -65,
-            right : 66,
-            top: -57,
-            bottom : 53,
-        },
-    ],
-    "Tactical Tile" : [
-        {
-            "src" : "./assets/tactical_tile.png",
-        },
-    ],
-    "World Tile" : [
-        {
-            "src" : "./assets/world_tile.png",
-        },
-    ],
-    "Armored Man": [
-        {
-            "src": "./assets/armored_man.png",
-            left: -47,
-            right: 49,
-            top: -70,
-            bottom: 52
-        }
-    ]
+
+class Cardinals {
+    static textToRect(_text) {
+        const ret = {};
+        const cards = ["left", "right", "top", "bottom"];
+        cards.forEach(element => {
+            const rex = new RegExp(`"?${element}"? ?= ?"(-?\\d+)"`);
+            const result = _text.match(rex);
+            if (result != null)
+                ret[element] = parseInt(result[1]);
+        });
+        return new Cardinals(ret.left, ret.right, ret.top, ret.bottom);
+    }
+    
+    static fromObject(obj) {
+        return new Cardinals(obj.left, obj.right, obj.top, obj.bottom);
+    }
+    
+    constructor(left, right, top, bottom) {
+        this.left = left;
+        this.right = right;
+        this.top = top;
+        this.bottom = bottom;
+    }
+    
+    parse = (_el) => Math.round(parseFloat(_el));
+    
+    rectToText() {
+        const left = this.left !== undefined ? `left="${this.parse(this.left)}"` : "";
+        const right = this.right !== undefined ? ` right="${this.parse(this.right)}"` : "";
+        const top = this.top !== undefined ? ` top="${this.parse(this.top)}"` : "";
+        const bottom = this.bottom !== undefined ? ` bottom="${this.parse(this.bottom)}"` : "";
+        return `${left}${right}${top}${bottom}`;
+    }
+    
+    invertHorizontal() {
+        return new Cardinals(
+            this.right !== undefined ? this.right * -1 : undefined,
+            this.left !== undefined ? this.left * -1 : undefined,
+            this.top,
+            this.bottom
+        );
+    }
+    
+    invertVertical() {
+        return new Cardinals(
+            this.left,
+            this.right,
+            this.bottom !== undefined ? this.bottom * -1 : undefined,
+            this.top !== undefined ? this.top * -1 : undefined
+        );
+    }
+    
+    getCenterOffsets(containerRect) {
+        const width = containerRect.width;
+        const height = containerRect.height;
+        const left = this.left - containerRect.left - (width / 2);
+        const right = this.right - containerRect.left - (width / 2);
+        const top = this.top - containerRect.top - (height / 2);
+        const bottom = this.bottom - containerRect.top - (height / 2);
+        return new Cardinals(left, right, -bottom, -top);
+    }
 }
-presets["Full Body"] = [presets["Body"][0], presets["Head"][0]];
-presets["Full Dead Body"] = [presets["Body Dead"][0], presets["Head Dead"][0]];
+
+
+class Sprite {
+    constructor(imgElement, name, spriteManager) {
+        this.spriteManager = spriteManager;
+        this.isActiveSprite = false;
+        this.isSelectedForGrouping = false;
+
+        this.imgElement = imgElement;
+        this.name = name;
+        this.id = this.generateId(name);
+        this.cardinals = new Cardinals();
+        
+        // Create containers immediately
+        this.imgContainer = this.createImageContainer();
+        this.defContainer = this.createSettingsContainer();
+        
+        // Setup the containers
+        this.setupContainers();
+    }
+    remove() {
+        if (this.defContainer) {
+            this.defContainer.remove();
+        }
+        if (this.imgContainer) {
+            this.imgContainer.remove();
+        }
+    }
+
+    setOpacity(value) {
+        this.imgContainer.style.opacity = value;
+        this.imgContainer.style.display = value < 0.01 ? "none" : "block";
+    }
+    
+    setZIndex(value) {
+        this.imgContainer.style.zIndex = value;
+    }
+    
+    toggleFlip() {
+        const flipCheckbox = this.defContainer.querySelector(".flip-container input");
+        flipCheckbox.checked = !flipCheckbox.checked;
+        this.imgContainer.classList.toggle("flipped", flipCheckbox.checked);
+        const cardinalText = this.defContainer.querySelector(".sprite-def-offset-text");
+        const currentCardinals = Cardinals.textToRect(cardinalText.innerHTML);
+        const flippedCardinals = currentCardinals.invertHorizontal();
+        this.positionWithCardinals(flippedCardinals);
+        return flipCheckbox.checked;
+    }
+
+    toggleActiveSprite() {
+        this.isActiveSprite = !this.isActiveSprite;
+        this.imgContainer.classList.toggle("activeElement", this.isActiveSprite);
+        this.defContainer.classList.toggle("activeSetting", this.isActiveSprite);
+    }
+
+    toggleSelectForGrouping() {
+        this.isSelectedForGrouping = !this.isSelectedForGrouping;
+        this.imgContainer.classList.toggle("is-selected-for-grouping", this.isSelectedForGrouping);
+        this.defContainer.classList.toggle("is-selected-for-grouping", this.isSelectedForGrouping);
+    }
+    
+    generateId(name) {
+        let nameSplit;
+        let nameSplitBack = name.split("\\");
+        let nameSplitFront = name.split("/");
+        nameSplit = nameSplitBack.length >= nameSplitFront.length ? nameSplitBack : nameSplitFront;
+        return nameSplit[nameSplit.length - 1];
+    }
+    
+    createImageContainer() {
+        let div = document.createElement("div");
+        div.draggable = true;
+        div.classList.add("spriteContainer");
+        div.setAttribute("sprite_id", this.id);
+        div.addEventListener("click", (event) => {
+            event.stopPropagation();
+            if (event.ctrlKey) {
+                this.toggleSelectForGrouping();
+            } else {
+                this.spriteManager.setActiveSprite(this);
+            }
+        });
+        div.addEventListener("dragstart", (event) => onDragStart(event));
+        return div;
+    }
+    
+    createSettingsContainer() {
+        let settingsDiv = this.createSpriteDefContainer();
+        settingsDiv.addEventListener("click", (event) => {
+            event.stopPropagation();
+            if (event.ctrlKey) {
+                this.toggleSelectForGrouping();
+            } else {
+                this.spriteManager.setActiveSprite(this);
+            }
+        });
+        settingsDiv.setAttribute("sprite_id", this.id);
+
+        let name = settingsDiv.querySelector(".sprite-def-name");
+        name.innerHTML = this.name;
+
+        const inputContainer = document.createElement("div");
+        inputContainer.classList.add("sprite-settings-inputs");
+        settingsDiv.append(inputContainer);
+
+        this.addSettingsControls(inputContainer);
+        
+        return settingsDiv;
+    }
+    
+    createSpriteDefContainer() {
+        const template = `
+        <div class="sprite-def">
+            <div class="sprite-def-name"></div>
+            <div class="sprite-def-offset-container">
+                <span class="sprite-def-offset-text"></span>
+            </div>
+        </div>`;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(template, "text/html");
+        let offsetText = doc.querySelector(".sprite-def-offset-text");
+        offsetText.addEventListener("click", (event) => {
+            event.stopPropagation();
+            navigator.clipboard.writeText(offsetText.innerHTML);
+            this.showCopiedFeedback(offsetText);
+        });
+        return doc.body.firstChild;
+    }
+    
+    showCopiedFeedback(offsetText) {
+        const copiedText = document.createElement("span");
+        copiedText.textContent = "Copied!";
+        copiedText.style.position = "absolute";
+        copiedText.style.right = "50px";
+        copiedText.style.opacity = "1";
+        copiedText.style.transition = "opacity 1s";
+        copiedText.style.paddingLeft = "1rem";
+    
+        offsetText.appendChild(copiedText);
+    
+        setTimeout(() => {
+            copiedText.style.opacity = "0";
+            setTimeout(() => {
+                copiedText.remove();
+            }, 500);
+        }, 0);
+    }
+    
+    addSettingsControls(inputContainer) {
+        // Opacity slider
+        const opacitySliderText = document.createTextNode("Opacity");
+        const opacitySlider = document.createElement("input");
+        opacitySlider.type = "range";
+        opacitySlider.min = 0.00;
+        opacitySlider.max = 1.0;
+        opacitySlider.value = 1.0;
+        opacitySlider.step = 0.01;
+        opacitySlider.addEventListener("input", (event) => {
+            this.setOpacity(event.target.value);
+        });
+
+        // Z-Index control
+        let zIndexContainer = document.createElement("div");
+        zIndexContainer.classList.add("zIndexContainer");
+        let zIndexLabel = document.createElement("span");
+        zIndexLabel.innerHTML = "Z-Index";
+        zIndexLabel.style.marginLeft = "1rem";
+        let zIndex = document.createElement("input");
+        zIndex.type = "number";
+        zIndex.onclick = (event) => { 
+            event.stopPropagation(); 
+            this.setZIndex(zIndex.value);
+        };
+        zIndexContainer.append(zIndexLabel, zIndex);
+
+        // Save button
+        let saveButton = document.createElement("button");
+        saveButton.innerHTML = "Save as PNG";
+        saveButton.addEventListener("click", (event) => {
+            event.stopPropagation();
+            this.saveAsPNG();
+        });
+
+        // Flip control
+        let flipContainer = document.createElement("div");
+        flipContainer.classList.add("flip-container");
+        let flipLabel = document.createElement("span");
+        flipLabel.innerHTML = "Flip sprite";
+        let flip = document.createElement("input");
+        flip.type = "checkbox";
+        flip.addEventListener("change", (event) => {
+            event.preventDefault();
+            event.stopPropagation(); 
+            this.toggleFlip();
+        });
+        flipContainer.append(flipLabel, flip);
+        
+        inputContainer.append(opacitySliderText, opacitySlider, zIndexContainer, saveButton, flipContainer);
+    }
+    
+    setupContainers() {
+        // Add the image to the container
+        this.imgContainer.append(this.imgElement);
+    }
+    
+    saveAsPNG() {
+        // Create a temporary container
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'relative';
+        tempContainer.style.display = 'inline-block';
+        const containerRect = this.imgContainer.getBoundingClientRect();
+        tempContainer.style.width = containerRect.width + 'px';
+        tempContainer.style.height = containerRect.height + 'px';
+        
+        // Clone the element
+        const clonedElement = this.imgContainer.cloneNode(true);
+        clonedElement.style.position = 'relative';
+        clonedElement.style.top = '';
+        clonedElement.style.left = '';
+        clonedElement.style.right = '';
+        clonedElement.style.bottom = '';
+        
+        tempContainer.appendChild(clonedElement);
+        document.body.appendChild(tempContainer);
+        
+        domtoimage.toPng(tempContainer, {
+            useCORS: true
+        })
+        .then((dataUrl) => {
+            document.body.removeChild(tempContainer);
+            let fileName = this.name.split('/');
+            fileName = fileName[fileName.length - 1];
+            
+            var link = document.createElement('a');
+            link.download = fileName;
+            link.href = dataUrl;
+            link.click();
+        })
+        .catch((error) => {
+            console.error('Error generating image:', error);
+            document.body.removeChild(tempContainer);
+        });
+    }
+    
+    positionWithCardinals(cardinals) {
+        const containerRect = externalContainer.getBoundingClientRect();
+        const img = this.imgElement;
+        
+        // either get the cardinals from the preset, or use the img source natural values
+        const addLeft = cardinals.left !== undefined ? cardinals.left : -(img.naturalWidth/2);
+        const addRight = cardinals.right !== undefined ? cardinals.right * -1 : -(img.naturalWidth/2);
+        const addTop = cardinals.bottom !== undefined ? cardinals.bottom * -1 : -(img.naturalHeight/2);
+        const addBottom = cardinals.top !== undefined ? cardinals.top : -(img.naturalHeight/2);
+        
+        const left = (containerRect.width/2) + addLeft;
+        const right = (containerRect.width/2) + addRight;
+        const top = (containerRect.height/2) + addTop;
+        const bottom = (containerRect.height/2) + addBottom;
+        
+        this.imgContainer.style.left = left + "px";
+        this.imgContainer.style.right = right + "px";
+        this.imgContainer.style.top = top + "px";
+        this.imgContainer.style.bottom = bottom + "px";
+        
+        this.cardinals = Cardinals.fromObject(cardinals);
+        this.updateCardinalText();
+    }
+    
+    updateCardinalText(target = null) {
+        const rect = this.imgContainer.getBoundingClientRect();
+        const containerRect = externalContainer.getBoundingClientRect();
+        const centerOffsets = new Cardinals(
+            rect.left - containerRect.left - (containerRect.width / 2),
+            rect.right - containerRect.left - (containerRect.width / 2), 
+            -(rect.bottom - containerRect.top - (containerRect.height / 2)),
+            -(rect.top - containerRect.top - (containerRect.height / 2))
+        );
+        
+        if (target == null)
+            target = this.defContainer.querySelector(".sprite-def-offset-text");
+        target.innerHTML = centerOffsets.rectToText();
+    }
+}
+
+class PresetManager {
+    constructor(_spriteManager) {
+        this.spriteManager = _spriteManager;
+        this.presets = {
+            "Head" : [
+                {
+                    "src" : "./assets/head.png",
+                    left : -21,
+                    right : 29,
+                    top: -20,
+                    bottom : 48,
+                },
+            ],
+            "Body" : [
+                {
+                    "src" : "./assets/body.png",
+                    top: -48,
+                    bottom : 10,
+                },
+            ],
+            "Head Dead" : [
+                {
+                    "src" : "./assets/head_dead.png",
+                    left : -44,
+                    right : 16,
+                    top: -58,
+                    bottom : 0,
+                },
+            ],
+            "Body Dead" : [
+                {
+                    "src" : "./assets/body_dead.png",
+                    left : -65,
+                    right : 66,
+                    top: -57,
+                    bottom : 53,
+                },
+            ],
+            "Tactical Tile" : [
+                {
+                    "src" : "./assets/tactical_tile.png",
+                },
+            ],
+            "World Tile" : [
+                {
+                    "src" : "./assets/world_tile.png",
+                },
+            ],
+            "Armored Man": [
+                {
+                    "src": "./assets/armored_man.png",
+                    left: -47,
+                    right: 49,
+                    top: -70,
+                    bottom: 52
+                }
+            ]
+        };
+        
+        this.presets["Full Body"] = [this.presets["Body"][0], this.presets["Head"][0]];
+        this.presets["Full Dead Body"] = [this.presets["Body Dead"][0], this.presets["Head Dead"][0]];
+    }
+    
+    getPreset(key) {
+        return this.presets[key];
+    }
+    
+    getAllPresetNames() {
+        return Object.keys(this.presets);
+    }
+    
+    loadPreset(key) {
+        let preset = this.presets[key];
+        preset.forEach(element => {
+            loadImage(element.src)
+            .then(img => this.spriteManager.addSprite(img, element.src))
+            .then(sprite => {
+                sprite.positionWithCardinals(element);
+            });
+        });
+    }
+}
+
+class SpriteManager {
+    constructor() {
+        this.sprites = new Map();
+        this.orderedSprites = [];
+        this.imgContainerToSprite = new WeakMap();
+        this.defContainerToSprite = new WeakMap();
+        this.presetManager = new PresetManager(this);
+        this.activeSprite = null;
+    }
+
+    setActiveSprite(_sprite, _removePrevious = true) {  
+        if (this.activeSprite) {
+            this.activeSprite.toggleActiveSprite();
+        }
+        if (_sprite === this.activeSprite && _removePrevious) {
+            this.activeSprite = null;
+            return;
+        }
+        this.activeSprite = _sprite;
+        if (this.activeSprite) {
+            this.activeSprite.toggleActiveSprite();
+        }
+    }
+
+    switchActiveSprite(_idx) {
+        // switch active sprite based on index
+        if (this.orderedSprites.length === 0) {
+            return;
+        }
+        if (this.activeSprite === null) {
+            this.setActiveSprite(_idx == -1 ? this.orderedSprites[0] : this.orderedSprites[this.orderedSprites.length - 1]);
+            return this.activeSprite;
+        }
+        let currentIndex = this.orderedSprites.indexOf(this.activeSprite);
+        let newIndex = currentIndex + _idx;
+        if (newIndex >= this.orderedSprites.length) {
+            newIndex = this.orderedSprites.length - 1;
+        } else if (newIndex < 0) {
+            newIndex = 0;
+        }
+        if (newIndex !== currentIndex) {
+            this.setActiveSprite(this.orderedSprites[newIndex]);
+        }
+        return this.activeSprite;
+    }
+
+    addSprite(imgElement, name) {
+        const sprite = new Sprite(imgElement, name, this);
+        
+        // Add to DOM
+        externalContainer.append(sprite.imgContainer);
+        elementSettingsContainer.append(sprite.defContainer);
+        
+        // Register sprite
+        this.sprites.set(sprite.imgContainer, sprite);
+        this.orderedSprites.push(sprite);
+        this.imgContainerToSprite.set(sprite.imgContainer, sprite);
+        this.defContainerToSprite.set(sprite.defContainer, sprite);
+        
+        this.addObserver(sprite.imgContainer);
+        
+        // Apply XML cardinals if available
+        let cardinals = {};
+        if (XMLMap.has(sprite.id))
+            cardinals = XMLMap.get(sprite.id);
+        sprite.positionWithCardinals(cardinals);
+        this.setActiveSprite(sprite);
+        return sprite;
+    }
+
+    removeSprite(_sprite) {
+        if (this.activeSprite === _sprite) {
+            this.setActiveSprite(null);
+        }
+        _sprite.remove();
+        this.sprites.delete(_sprite);
+        this.orderedSprites = this.orderedSprites.filter(s => s !== _sprite);
+    }
+    
+    addObserver(_div) {
+        const config = {attributes : true};
+        const callback = function(mutationList, observer){
+            const sprite = spriteManager.sprites.get(_div);
+            if (sprite) {
+                sprite.updateCardinalText();
+            }
+            observer.disconnect();
+            setTimeout(() => observer.observe(_div, config), 0.05);
+            return;
+        }
+        // add observer
+        const observer = new MutationObserver(callback);
+        observer.observe(_div, config);
+        return observer;
+    }
+}
+
+// Initialize the sprite manager
+const spriteManager = new SpriteManager();
 
 document.addEventListener('DOMContentLoaded', function() {
     yAxis = document.getElementById("axis-Y");
@@ -72,14 +543,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (event.key !== 'Enter')
             return;
         handlePassedCardinals();
-    })
-    for (const [key, value] of Object.entries(presets))
-    {
+    });
+    
+    // Populate presets dropdown
+    for (const presetName of spriteManager.presetManager.getAllPresetNames()) {
         const option = document.createElement("option");
-        option.value = key;
-        option.innerHTML = key;
+        option.value = presetName;
+        option.innerHTML = presetName;
         paperdollPresets.append(option);
     }
+    
     document.querySelectorAll('input[type=checkbox]').forEach(i => i.checked = false);
     addKeybinds();
 }, false);
@@ -87,46 +560,47 @@ document.addEventListener('DOMContentLoaded', function() {
 function addKeybinds() {
     document.addEventListener("keydown",
         (event) => {
+            const activeSprite = spriteManager.activeSprite;
             if (event.target === document.getElementById("spritePositioner")) {
                 return;
             }
             if (event.ctrlKey) {
                 if (event.key === "ArrowRight") {
                     event.preventDefault();
-                    switchActiveElement(1);
+                    spriteManager.switchActiveSprite(1);
                 }
                 if (event.key === "ArrowLeft") {
                     event.preventDefault();
-                    switchActiveElement(-1);
+                    spriteManager.switchActiveSprite(-1);
                 }
                 if (event.key === "c") {
-                    if (activeElement) {
-                        spriteMap.get(activeElement).querySelector(".sprite-def-offset-text").click();
+                    if (activeSprite) {
+                        activeSprite.defContainer.querySelector(".sprite-def-offset-text").click();
                     }
                 }
                 if (event.key === "ArrowUp") {
                     event.preventDefault();
-                    if (activeElement) {
-                        const zIndexContainer = spriteMap.get(activeElement).querySelector(".zIndexContainer input");
+                    if (activeSprite) {
+                        const zIndexContainer = activeSprite.defContainer.querySelector(".zIndexContainer input");
                         if (zIndexContainer.value == "") {
                             zIndexContainer.value = 1;
-                        }
-                        else { 
+                        } else { 
                             zIndexContainer.value = parseInt(zIndexContainer.value) + 1;
                         }
-                        zIndexContainer.dispatchEvent(new Event("click"));
+                        activeSprite.setZIndex(zIndexContainer.value);
                     }
                 }
                 if (event.key === "ArrowDown") {
                     event.preventDefault();
-                    const zIndexContainer = spriteMap.get(activeElement).querySelector(".zIndexContainer input");
-                    if (zIndexContainer.value == "") {
-                        zIndexContainer.value = 0;
+                    if (activeSprite) {
+                        const zIndexContainer = activeSprite.defContainer.querySelector(".zIndexContainer input");
+                        if (zIndexContainer.value == "") {
+                            zIndexContainer.value = 0;
+                        } else { 
+                            zIndexContainer.value = parseInt(zIndexContainer.value) - 1;
+                        }
+                        activeSprite.setZIndex(zIndexContainer.value);
                     }
-                    else { 
-                        zIndexContainer.value = parseInt(zIndexContainer.value) - 1;
-                    }
-                    zIndexContainer.dispatchEvent(new Event("click"));
                 }
                 return;
             }
@@ -149,37 +623,24 @@ function addKeybinds() {
                     moveImage(0, 1)
                     break;
                 case "Delete":
-                    if (activeElement) {
-                        spriteMap.get(activeElement).remove();
-                        activeElement.remove();
-                        activeElement = null;
-                    }
-                    break;
-                case "Escape":
-                    if (activeElement) {
-                        spriteMap.get(activeElement).classList.remove("activeSetting");
-                        activeElement.classList.remove("activeElement");
-                        activeElement = null;
+                    if (activeSprite) {
+                        spriteManager.removeSprite(activeSprite);
                     }
                     break;
                 case "f":
-                    if (activeElement) {
-                        const flipCheckbox = spriteMap.get(activeElement).querySelector(".flip-container input");
-                        flipCheckbox.checked = !flipCheckbox.checked;
-                        flipCheckbox.dispatchEvent(new Event("change"));
+                    if (activeSprite) {
+                        activeSprite.toggleFlip();
                     }
                     break;
                 case "o":
-                    // toggle opacity slider
-                    // if opacity slider is full, set to empty, else set to full
-                    if (activeElement) {
-                        const opacitySlider = spriteMap.get(activeElement).querySelector("input[type=range]");
+                    if (activeSprite) {
+                        const opacitySlider = activeSprite.defContainer.querySelector("input[type=range]");
                         if (opacitySlider.value == 1.0) {
                             opacitySlider.value = 0.0;
                         } else {
                             opacitySlider.value = 1.0;
                         }
-                        opacitySlider.dispatchEvent(new Event("input"));
+                        activeSprite.setOpacity(opacitySlider.value);
                     }
             }
         },
@@ -187,281 +648,60 @@ function addKeybinds() {
     );
 }
 
-function switchActiveElement(_idxToMove)
-{
-    // move either 1 up or down in the list of spriteContainers based on _idxToMove
-    // select externalContainer children that have class "spriteContainer"
-    const containers = Array.from(externalContainer.children).filter(el => el.classList.contains("spriteContainer"));
-    if (containers.length == 0) {
+function handlePassedCardinals() {
+    const text = document.getElementById("spritePositioner").value;
+    const cardinals = Cardinals.textToRect(text);
+    if (spriteManager.activeSprite) {
+        spriteManager.activeSprite.positionWithCardinals(cardinals);
+    }
+}
+
+function groupSprites() {
+    const selectedSpritesForGrouping = spriteManager.orderedSprites.filter(sprite => sprite.isSelectedForGrouping);
+    if (selectedSpritesForGrouping.length < 2) {
+        alert("Please select at least two elements to group.");
         return;
     }
-    let currentIndex = containers.indexOf(activeElement);
-    let newIndex = currentIndex + _idxToMove;
-    if (newIndex >= containers.length) {
-        newIndex = containers.length - 1;
-    } else if (newIndex < 0) {
-        newIndex = 0;
-    }
-    setActiveElement(containers[newIndex]);
-}
+    const selectedSpriteIDs = selectedSpritesForGrouping.map(sprite => sprite.id);
+    const mergedSpriteName = selectedSpriteIDs.join("_");
+    const selectedImageContainers = selectedSpritesForGrouping.map(sprite => sprite.imgContainer);
+    const selectedSettingDefs = selectedSpritesForGrouping.map(sprite => sprite.defContainer);
 
-function getCenterOffsets(_element)
-{
-    const containerRect = externalContainer.getBoundingClientRect();
-    const width = containerRect.width;
-    const height = containerRect.height;
-    const left =        _element.left    - containerRect.left - (width / 2);
-    const right =       _element.right   - containerRect.left - (width / 2);
-    const top =         _element.top     - containerRect.top  - (height / 2);
-    const bottom =      _element.bottom  - containerRect.top  - (height / 2);
-    return {left:left, right:right, top:-bottom, bottom:-top}
-}
-
-function cardinalRectToText(rect) {
-    const parse = (_el) => Math.round(parseFloat(_el));
-    const left = rect.left !== undefined ? `left="${parse(rect.left)}"` : "";
-    const right = rect.right !== undefined ? ` right="${parse(rect.right)}"` : "";
-    const top = rect.top !== undefined ? ` top="${parse(rect.top)}"` : "";
-    const bottom = rect.bottom !== undefined ? ` bottom="${parse(rect.bottom)}"` : "";
-    return `${left}${right}${top}${bottom}`;
-}
-
-function cardinalTextToRect(_text)
-{
-    const ret = {};
-    const cards = ["left", "right", "top", "bottom"];
-    cards.forEach(element => {
-        const rex = new RegExp(`"?${element}"? ?= ?"(-?\\d+)"`);
-        const result = _text.match(rex);
-        if (result != null)
-            ret[element] = parseInt(result[1]);
+    let rect = {};
+    selectedSettingDefs.forEach(settingDef => {
+        let settingRect = Cardinals.textToRect(settingDef.querySelector(".sprite-def-offset-text").innerHTML);
+        if (rect.left === undefined || settingRect.left < rect.left) {
+            rect.left = settingRect.left;
+        }
+        if (rect.right === undefined || settingRect.right > rect.right) {
+            rect.right = settingRect.right;
+        }
+        if (rect.top === undefined || settingRect.top < rect.top) {
+            rect.top = settingRect.top;
+        }
+        if (rect.bottom === undefined || settingRect.bottom > rect.bottom) {
+            rect.bottom = settingRect.bottom;
+        }
     });
-    return ret;
-}
 
-function invertHorizontalCardinals(_cardinals) {
-    const ret = {};
-    ret.left = _cardinals.right !== undefined ?    _cardinals.right * -1 : undefined;
-    ret.right = _cardinals.left !== undefined ?    _cardinals.left * -1 : undefined;
-    ret.top = _cardinals.top;
-    ret.bottom = _cardinals.bottom;
-    return ret;
-}
-function invertVerticalCardinals(_cardinals) {
-    const ret = {};
-    ret.left = _cardinals.left;
-    ret.right = _cardinals.right;
-    ret.top = _cardinals.bottom !== undefined ? _cardinals.bottom * -1 : undefined;
-    ret.bottom = _cardinals.top !== undefined ? _cardinals.top * -1 : undefined;
-    return ret;
-}
-
-function handlePassedCardinals()
-{
-    const text = document.getElementById("spritePositioner").value;
-    const cardinals = cardinalTextToRect(text);
-    positionWithCardinals(activeElement, cardinals);
-}
-
-function positionWithCardinals(_element, _cardinals)
-{
-    const img = _element.querySelector("img");
-    const containerRect = externalContainer.getBoundingClientRect();
-    // either get the cardinals from the preset, or use the img source natural values
-    const addLeft =     _cardinals.left !== undefined ?   _cardinals.left  : -(img.naturalWidth/2);
-    const addRight =    _cardinals.right !== undefined ? _cardinals.right * -1 : -(img.naturalWidth/2);
-    const addTop =      _cardinals.bottom !== undefined ? _cardinals.bottom  * -1 : -(img.naturalHeight/2);
-    const addBottom =   _cardinals.top   !== undefined ?  _cardinals.top :  -(img.naturalHeight/2);
-    const left =    (containerRect.width/2)  + addLeft;
-    const right =   (containerRect.width/2)  + addRight;
-    const top =     (containerRect.height/2) + addTop;
-    const bottom =  (containerRect.height/2) + addBottom;
-    _element.style.left =     (left)  + "px";
-    _element.style.right =    (right)  + "px";
-    _element.style.top =      (top) + "px";
-    _element.style.bottom =   (bottom)  + "px";
-    updateCardinalText(_element);
-}
-
-function updateCardinalText(el, target = null)
-{
-    const rect = getCenterOffsets(el.getBoundingClientRect());
-    if (target == null)
-        target = spriteMap.get(el).querySelector(".sprite-def-offset-text");
-    target.innerHTML = cardinalRectToText(rect);
-}
-
-function addSprite(_img, _name)
-{
-    const container = createNewImageContainer();
-    container.append(_img)
-    externalContainer.append(container);
-    let nameSplit;
-    let nameSplitBack = _name.split("\\");
-    let nameSplitFront = _name.split("/");
-    nameSplit = nameSplitBack.length >= nameSplitFront.length ? nameSplitBack : nameSplitFront;
-    let nameStem = nameSplit[nameSplit.length - 1];
-    container.setAttribute("sprite_id", nameStem);
-
-    const settingsDiv = createNewImageSettingsContainer(container, _name)
-    elementSettingsContainer.append(settingsDiv)
-    spriteMap.set(container, settingsDiv);
-
-    addObserver(container);
-    setActiveElement(container);
-    let cardinals = {};
-    if (XMLMap.has(nameStem))
-        cardinals = XMLMap.get(nameStem);
-    positionWithCardinals(container, cardinals);
-    return container;
-}
-
-function createNewImageContainer(_src)
-{
-    let div = document.createElement("div");
-    div.draggable = true;
-    div.classList.add("spriteContainer");
-    div.addEventListener("click", (event) => setActiveElement(div));
-    div.addEventListener("dragstart", (event) => onDragStart(event));
-    return div;
-}
-
-function createSpriteDefContainer(params)
-{
-    const template = `
-    <div class="sprite-def">
-        <div class="sprite-def-name"></div>
-        <div class="sprite-def-offset-container">
-            <span class="sprite-def-offset-text"></span>
-        </div>
-    </div>`;
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(template, "text/html");
-    let offsetText = doc.querySelector(".sprite-def-offset-text");
-    offsetText.addEventListener("click", (event) => {
-        event.stopPropagation();
-        navigator.clipboard.writeText(offsetText.innerHTML);
-        const copiedText = document.createElement("span");
-        copiedText.textContent = "Copied!";
-        copiedText.style.position = "absolute";
-        copiedText.style.right = "50px";
-        copiedText.style.opacity = "1";
-        copiedText.style.transition = "opacity 1s";
-        copiedText.style.paddingLeft = "1rem"
-    
-        offsetText.appendChild(copiedText);
-    
-        setTimeout(() => {
-            copiedText.style.opacity = "0";
-            setTimeout(() => {
-                copiedText.remove();
-            }, 500);
-        }, 0);
-    })
-    return doc.body.firstChild;
-}
-
-function createNewImageSettingsContainer(container, _name)
-{
-    let settingsDiv = createSpriteDefContainer();
-    settingsDiv.addEventListener("click", (event) => { event.stopPropagation(); setActiveElement(container)})
-
-    let name = settingsDiv.querySelector(".sprite-def-name");
-    name.innerHTML = _name;
-
-    const inputContainer = document.createElement("div");
-    inputContainer.classList.add("sprite-settings-inputs");
-    settingsDiv.append(inputContainer);
-
-    const opacitySliderText = document.createTextNode("Opacity");
-    const opacitySlider = document.createElement("input");
-    opacitySlider.type = "range";
-    opacitySlider.min = 0.00;
-    opacitySlider.max = 1.0;
-    opacitySlider.value = 1.0;
-    opacitySlider.step = 0.01;
-    opacitySlider.addEventListener("input", function(event){
-        container.style.opacity = this.value;
-        if (this.value < 0.01)
-            container.style.display = "none";
-        else
-            container.style.display = "block";
-    })
-    let zIndexContainer = document.createElement("div");
-    zIndexContainer.classList.add("zIndexContainer");
-    let zIndexLabel = document.createElement("span");
-    zIndexLabel.innerHTML = "Z-Index";
-    zIndexLabel.style.marginLeft = "1rem";
-    let zIndex = document.createElement("input");
-    zIndex.type = "number";
-    zIndex.onclick = (event) => { event.stopPropagation(); container.style.zIndex = zIndex.value };
-    zIndexContainer.append(zIndexLabel, zIndex);
-
-    let saveButton = document.createElement("button");
-    saveButton.innerHTML = "Save as PNG";
-    saveButton.addEventListener("click", (event) => {
-        event.stopPropagation();
-        
-        // Create a temporary container
-        const tempContainer = document.createElement('div');
-        tempContainer.style.position = 'relative';
-        tempContainer.style.display = 'inline-block';
-        const containerRect = container.getBoundingClientRect();
-        tempContainer.style.width = containerRect.width + 'px';
-        tempContainer.style.height = containerRect.height + 'px';
-        
-        // Clone the element
-        const clonedElement = container.cloneNode(true);
-        clonedElement.style.position = 'relative';
-        clonedElement.style.top = '';
-        clonedElement.style.left = '';
-        clonedElement.style.right = '';
-        clonedElement.style.bottom = '';
-        
-        tempContainer.appendChild(clonedElement);
-        document.body.appendChild(tempContainer);
-        
-        domtoimage.toPng(tempContainer, {
-            useCORS: true
-        })
-        .then(function (dataUrl) {
-            document.body.removeChild(tempContainer);
-            let fileName = _name.split('/');
-            fileName = fileName[fileName.length - 1];
-            
-            var link = document.createElement('a');
-            link.download = fileName;
-            link.href = dataUrl;
-            link.click();
-        })
-        .catch(function (error) {
-            console.error('Error generating image:', error);
-            document.body.removeChild(tempContainer);
+    const groupImage = document.createElement("img");
+    groupImage.classList.add("spriteImg");
+    const mergeDefs = [...selectedSpritesForGrouping].map(sprite => {
+        return {
+            src: sprite.imgElement.src,
+            x: sprite.cardinals.left !== undefined ? sprite.cardinals.left : 0,
+            y: sprite.cardinals.bottom !== undefined ? sprite.cardinals.bottom  : 0
+        };
+    });
+    mergeImages(mergeDefs)
+        .then(b64 => groupImage.src = b64)
+        .then(function () {
+            const sprite = spriteManager.addSprite(groupImage, mergedSpriteName);
+            sprite.positionWithCardinals(rect);
         });
-    });
-
-    let flipContainer = document.createElement("div");
-    flipContainer.classList.add("flip-container");
-    let flipLabel = document.createElement("span");
-    flipLabel.innerHTML = "Flip sprite";
-    let flip = document.createElement("input");
-    flip.type = "checkbox";
-    flip.addEventListener("change", function(event) {
-        event.stopPropagation(); 
-        container.classList.toggle("flipped", this.checked);
-        const cardinalText = settingsDiv.querySelector(".sprite-def-offset-text");
-        const rect = cardinalTextToRect(cardinalText.innerHTML);
-        const flippedCardinals = invertHorizontalCardinals(rect);
-        positionWithCardinals(container, flippedCardinals);
-    })
-    flipContainer.append(flipLabel, flip);
-    inputContainer.append(opacitySliderText, opacitySlider, zIndexContainer, saveButton, flipContainer)
-    
-    return settingsDiv;
 }
 
-function loadImage(_src)
-{
+function loadImage(_src) {
     return new Promise(resolve => {
         let img = document.createElement("img");
         img.classList.add("spriteImg");
@@ -470,53 +710,29 @@ function loadImage(_src)
     });
 }
 
-function addObserver(_div)
-{
-    const config = {attributes : true};
-    const callback = function(mutationList, observer){
-        updateCardinalText(_div);
-        observer.disconnect();
-        setTimeout(() => observer.observe(_div, config), 0.05)
-        return;
-    }
-    // add observer
-    const observer = new MutationObserver(callback);
-    observer.observe(_div, config);
-    return observer;
+function loadPresetDummy(_key) {
+    spriteManager.presetManager.loadPreset(_key);
 }
 
-function loadPresetDummy(_key)
-{
-    let preset = presets[_key];
-    preset.forEach(element => {
-        loadImage(element.src)
-        .then(img => addSprite(img, element.src))
-        .then(container => positionWithCardinals(container, element))
-    });
-}
-
-function loadFile(ev)
-{
+function loadFile(ev) {
     let tgt = ev.target,
         files = tgt.files;
     if (FileReader && files && files.length) {
-        for (let x = 0; x < files.length; x++)
-        {
+        for (let x = 0; x < files.length; x++) {
             let fr = new FileReader();
             fr.onload = function () {
                 loadImage(fr.result)
-                .then(img => addSprite(img, files[x].name))
+                .then(img => spriteManager.addSprite(img, files[x].name));
             }
             fr.readAsDataURL(files[x]);
         }
     }
 }
-function loadXMLFile(ev)
-{
+
+function loadXMLFile(ev) {
     let tgt = ev.target,
         files = tgt.files;
     if (FileReader && files && files.length) {
-        const groups = [];
         for (let x = 0; x < files.length; x++) {
             let fr = new FileReader();
             let parser = new DOMParser();
@@ -529,14 +745,12 @@ function loadXMLFile(ev)
                 const header = doc.querySelector("brush");
                 if (header != null) {
                     const headerName = header.getAttribute("name");
-                    if (headerName != null && headerName.length > 0)
-                    {
+                    if (headerName != null && headerName.length > 0) {
                         group.name += " - " + headerName;
                     }
                 }
                 const sprites = doc.getElementsByTagName("sprite");
-                for (let y = 0; y < sprites.length; y++)
-                {
+                for (let y = 0; y < sprites.length; y++) {
                     const sprite = sprites[y];
                     let img = sprite.getAttribute("img");
                     let nameSplit;
@@ -544,25 +758,19 @@ function loadXMLFile(ev)
                     let nameSplitFront = img.split("/");
                     nameSplit = nameSplitBack.length >= nameSplitFront.length ? nameSplitBack : nameSplitFront;
                     img = nameSplit[nameSplit.length - 1];
-                    const cardinals = {
-                        img: img,
-                        left: parseInt(sprite.getAttribute("left")),
-                        right: parseInt(sprite.getAttribute("right")),
-                        top: parseInt(sprite.getAttribute("top")),
-                        bottom: parseInt(sprite.getAttribute("bottom")),
-                    }
-                    if (isNaN(cardinals.left)) cardinals.left = undefined;
-                    if (isNaN(cardinals.right)) cardinals.right = undefined;
-                    if (isNaN(cardinals.top)) cardinals.top = undefined;
-                    if (isNaN(cardinals.bottom)) cardinals.bottom = undefined;
+                    const cardinals = new Cardinals(
+                        parseInt(sprite.getAttribute("left")) || undefined,
+                        parseInt(sprite.getAttribute("right")) || undefined,
+                        parseInt(sprite.getAttribute("top")) || undefined,
+                        parseInt(sprite.getAttribute("bottom")) || undefined
+                    );
                     group.spriteDefs[img] = cardinals;
-                    spriteMap.forEach((_value, key) => {
-                        if (key.getAttribute("sprite_id") == img)
-                        {
-                            positionWithCardinals(key, cardinals);
+                    spriteManager.sprites.forEach((sprite, key) => {
+                        if (key.getAttribute("sprite_id") == img) {
+                            sprite.positionWithCardinals(cardinals);
                             return false;
                         }
-                    })
+                    });
                 }
                 addXMLGroup(group);
             }
@@ -582,29 +790,30 @@ function addXMLGroup(group) {
         event.stopPropagation();
         if (groupSpriteDefContainer.style.display == "none") {
             groupSpriteDefContainer.style.display = "block";
-        }
-        else {
+        } else {
             groupSpriteDefContainer.style.display = "none";
         }
     });
     for (const [key, element] of Object.entries(group.spriteDefs)) {
         XMLMap.set(key, element);
-        let spriteDef = createSpriteDefContainer();
+        let spriteDef = spriteManager.createSpriteDefContainer();
         spriteDef.querySelector(".sprite-def-name").innerHTML = key;
-        spriteDef.querySelector(".sprite-def-offset-text").innerHTML = cardinalRectToText(element);
+        spriteDef.querySelector(".sprite-def-offset-text").innerHTML = element.rectToText();
         groupSpriteDefContainer.append(spriteDef);
     };
     document.querySelector("#xmlUploadContainer").append(groupContainer);
 }
 
+// Keep existing drag and positioning functions
 let previousX;
 let previousY
 let offsetX;
 let offsetY;
 
-function onDragStart(ev){
-    setActiveElement(ev.currentTarget)
-    const rect = activeElement.getBoundingClientRect();
+function onDragStart(ev) {
+    const imgContainer = ev.currentTarget;
+    spriteManager.setActiveSprite(spriteManager.imgContainerToSprite.get(imgContainer), false);
+    const rect = imgContainer.getBoundingClientRect();
     previousX = ev.clientX;
     previousY = ev.clientY;
     offsetX = ev.clientX - rect.x;
@@ -614,7 +823,7 @@ function onDragStart(ev){
 function dragover_handler(ev) {
     ev.preventDefault();
     ev.dataTransfer.dropEffect = "move";
-};
+}
 
 function drop_handler(ev) {
     ev.preventDefault();
@@ -623,7 +832,7 @@ function drop_handler(ev) {
             let fr = new FileReader();
             fr.onload = function () {
                 loadImage(fr.result)
-                .then(img => addSprite(img, file.name))
+                .then(img => spriteManager.addSprite(img, file.name));
             }
             fr.readAsDataURL(file);
         });
@@ -632,11 +841,14 @@ function drop_handler(ev) {
 
     const left = ev.clientX - previousX;
     const top = ev.clientY - previousY;
-    moveImage(left, top)
+    moveImage(left, top);
 }
 
-function moveImage(x=0, y=0)
-{
+function moveImage(x=0, y=0) {
+    const activeSprite = spriteManager.activeSprite;
+    if (!activeSprite) return;
+    const activeElement = activeSprite.imgContainer;
+    
     const boundingRect = externalContainer.getBoundingClientRect();
     activeElement.style.right = `${boundingRect.width - activeElement.offsetLeft - activeElement.offsetWidth - x}px`;
     activeElement.style.bottom = `${boundingRect.height - activeElement.offsetTop - activeElement.offsetHeight - y}px`;
@@ -644,47 +856,28 @@ function moveImage(x=0, y=0)
     activeElement.style.top = `${activeElement.offsetTop + y}px`;
 }
 
-function setActiveElement(_elem)
-{
-    if (activeElement)
-    {
-        spriteMap.get(activeElement).classList.remove("activeSetting");
-        activeElement.classList.remove("activeElement");
-    }
-    activeElement = _elem;
-    activeElement.classList.add("activeElement");
-    spriteMap.get(activeElement).classList.add("activeSetting");
-}
-
-function toggleBackground(_)
-{
+function toggleBackground(_) {
     let checkbox = document.querySelector("#toggleBackgroundCheckbox");
-    if (checkbox.checked)
-    {
+    if (checkbox.checked) {
         externalContainer.classList.add("backgroundVisible");
-    }
-    else
-    {
+    } else {
         externalContainer.classList.remove("backgroundVisible");
     }    
 }
 
-function toggleGrid(_)
-{
+function toggleGrid(_) {
     externalContainer.setAttribute("showgrid", !hideGridCheckbox.checked);
 }
 
-function toggleSize(_)
-{
+function toggleSize(_) {
     let size = toggleSizeCheckbox.checked ? 200 : 400;
-    externalContainer.style.width =  size + "px";
+    externalContainer.style.width = size + "px";
     externalContainer.style.height = size + "px";
     yAxis.style.left = size / 2 + "px";
     xAxis.style.top = size / 2 + "px";
 }
 
-function saveAsImg(ev)
-{
+function saveAsImg(ev) {
     domtoimage.toPng(externalContainer)
     .then(function (dataUrl) {
         var link = document.createElement('a');
