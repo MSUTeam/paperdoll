@@ -52,6 +52,12 @@ button:active,
 input[type="button"]:active {
     transform: translateY(0);
 }
+input[type="button"]:disabled
+{
+    background: #cbd5e0;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
 
 /* Modern Checkboxes */
 input[type="checkbox"] {
@@ -73,7 +79,7 @@ input[type="checkbox"]:checked {
 }
 
 input[type="checkbox"]:checked::after {
-    content: '✓';
+    content: 'X';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -268,11 +274,9 @@ code {
     background: rgba(102, 126, 234, 0.05);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
-.is-selected-for-grouping
-{
-    border-color: #ea6683 !important;
-    background: rgba(102, 126, 234, 0.05);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+.sprite-def.is-selected-for-grouping{
+    border-color: #e44063;
+    box-shadow: 0 4px 12px rgba(247, 97, 130, 0.2);
 }
 .sprite-def-name,
 .XMLGroupName {
@@ -330,6 +334,9 @@ code {
 .sprite-def .flip-container {
     flex: 0 0 auto; /* Don't grow/shrink, natural size */
 }
+.sprite-def .flip-container > span {
+    user-select: none;
+}
 
 /* Input styling */
 .sprite-def .sprite-settings-inputs input[type="range"] {
@@ -379,6 +386,11 @@ code {
 #externalContainer[showgrid="true"] .spriteContainer.activeElement
 {
     outline: 1px solid #1354B1;
+}
+#externalContainer[showgrid="true"] .spriteContainer.is-selected-for-grouping
+{
+    outline:  1px solid #e44063;
+    box-shadow: 0 4px 12px rgba(247, 97, 130, 0.2);
 }
 
 #externalContainer[showgrid="true"] .spriteContainer

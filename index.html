@@ -22,6 +22,7 @@
                 <p>Use <b>Ctrl + C</b>  to copy the current sprite offsets to the clipboard.</p>
                 <p>Use <b>o</b>  to toggle the opacity slider of the active element</p>
                 <p>Use <b>f</b>  to toggle flip of the active element</p>
+                <p><b>Ctrl + Click</b> on an element to select it for grouping.</p>
             </div>
         </div>
         <div id ="mainContainer">
@@ -39,7 +40,9 @@
                 <input onchange="loadFile(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" multiple="multiple"/>
                 <div id ="spriteUploadContainer">
                     <div>Current sprites on the grid. The currently "active" sprite has a blue border. A sprite can be activated by clicking on it. Use arrow keys to position element, or drag and drop it.</div>
-                    <input type="button" onclick="groupSprites()" value="Group Sprites"/>
+                    <input id = "groupSpritesButton" type="button" onclick="groupSprites()" value="Group Sprites" disabled/>
+                    <input type="checkbox" id="deleteGroupedSpritesCheckbox" checked>
+                    <label for="deleteGroupedSpritesCheckbox" >Delete sprites after grouping</label>
                     <div id="elementSettingsContainer"></div>
                 </div>
             </div>
