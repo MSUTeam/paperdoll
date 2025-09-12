@@ -13,6 +13,7 @@
                 The grid lines are what the offsets are calculated off.<br>
                 Upload a new sprite with the button below.<br>
                 The currently "active" sprite has a blue border. A sprite can be activated by clicking on it. Use arrow keys to position element, or drag and drop it.<br>
+                The "Copy Metadata" button will copy the cardinal values of all selected sprites, either active or selected for grouping, to the clipboard in BB format.<br>
             </div>
             <div id = "controls-description">
                 <h1>Controls</h1>
@@ -43,6 +44,10 @@
                     <input id = "groupSpritesButton" type="button" onclick="groupSprites()" value="Group Sprites" disabled/>
                     <input type="checkbox" id="deleteGroupedSpritesCheckbox" checked>
                     <label for="deleteGroupedSpritesCheckbox" >Delete sprites after grouping</label>
+                    <br/>
+                    <input id = "copyMetadataButton" type="button" onclick="copyMetadata()" value="Copy Metadata"/>
+                    <input type="checkbox" id="deleteCopyMetadataCheckbox" checked>
+                    <label for="deleteCopyMetadataCheckbox" >Delete sprites after copying metadata</label>
                     <div id="elementSettingsContainer"></div>
                 </div>
             </div>

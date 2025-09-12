@@ -751,6 +751,42 @@ function groupSprites() {
     });
 }
 
+function copyMetadata() {
+    const selectedSpritesForGrouping = spriteManager.orderedSprites.filter(sprite => sprite.isSelectedForGrouping || sprite.isActiveSprite);
+    if (selectedSpritesForGrouping.length === 0) {
+        alert("Please select at least one element to copy metadata.");
+        return;
+    };
+    let outputString = "";
+    selectedSpritesForGrouping.forEach(sprite => {
+        const cardinals = sprite.textToCardinals();
+        outputString += `<sprite id="${sprite.id}" img="${sprite.id}" ${cardinals.rectToText()}/>\n`;
+    });
+    navigator.clipboard.writeText(outputString);
+    if (document.getElementById("deleteCopyMetadataCheckbox").checked) {
+        selectedSpritesForGrouping.forEach(sprite => {
+            spriteManager.removeSprite(sprite);
+        });
+    }   
+    const copiedText = document.createElement("span");
+    copiedText.textContent = "Copied!";
+    copiedText.style.position = "absolute";
+    copiedText.style.right = "50px";
+    copiedText.style.opacity = "1";
+    copiedText.style.transition = "opacity 1s";
+    copiedText.style.paddingLeft = "1rem";
+    
+    const elementSettingsContainer = document.getElementById("elementSettingsContainer");
+    elementSettingsContainer.parentNode.insertBefore(copiedText, elementSettingsContainer);
+    setTimeout(() => {
+        copiedText.style.transition = "opacity 0.5s ease-out";
+        copiedText.style.opacity = "0";
+        setTimeout(() => {
+            copiedText.remove();
+        }, 500);
+    }, 1000);
+}
+
 function loadImage(_src) {
     return new Promise(resolve => {
         let img = document.createElement("img");
