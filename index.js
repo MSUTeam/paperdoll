@@ -45,6 +45,15 @@ class PresetManager {
                     "src" : "./assets/tactical_tile.png",
                 },
             ],
+            "Tactical Bust" : [
+                {
+                    "src": "./assets/bust_base_player.png",
+                    left : -49,
+                    right : 51,
+                    top: -71,
+                    bottom : -5,
+                },
+            ],
             "World Tile" : [
                 {
                     "src" : "./assets/world_tile.png",
