@@ -25,7 +25,7 @@
                 <p>Use <b>f</b>  to toggle flip of the active element</p>
                 <p><b>Ctrl + Click</b> on an element to select it for grouping.</p>
             </div>
-            <small>v1.0.1</small><br>
+            <small>v1.0.2</small><br>
         </div>
         <div id ="mainContainer">
             <div id ="spriteSettingsContainer">
@@ -39,7 +39,7 @@
                     <input type="button" onclick="loadPresetDummy(document.getElementById('paperdollPresets').value)" value="Load preset"/>
                 </div>
                 <div>Upload a sprite (.png or .jpg file) to add to the grid. </div>
-                <input onchange="loadFile(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" multiple="multiple"/>
+                <input onclick="this.value=null" onchange="loadFile(event)" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" multiple="multiple"/>
                 <div id ="spriteUploadContainer">
                     <div>Current sprites on the grid. The currently "active" sprite has a blue border. A sprite can be activated by clicking on it. Use arrow keys to position element, or drag and drop it.</div>
                     <input id = "groupSpritesButton" type="button" onclick="groupSprites()" value="Group Sprites" disabled/>
