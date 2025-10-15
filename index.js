@@ -938,9 +938,13 @@ function drop_handler(ev) {
     moveImage(left, top);
 }
 
-function moveImage(x=0, y=0) {
+function moveImage(x = 0, y = 0) {
     const activeSprite = spriteManager.activeSprite;
     if (!activeSprite) return;
+    if (activeSprite.imgContainer.style.display === "none") {
+        // If we move it now it will bug out -> avoid moving invisible elements
+        return;
+    }
     const activeElement = activeSprite.imgContainer;
     
     const boundingRect = externalContainer.getBoundingClientRect();
